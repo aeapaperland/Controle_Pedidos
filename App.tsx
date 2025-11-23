@@ -108,9 +108,9 @@ const INITIAL_PRODUCTS: Product[] = [
   },
   { 
     id: 'prod_lascas', 
-    name: 'Lascas de Chocolate Decoradas', 
-    basePrice: 28.00, 
-    costPrice: 8.00, 
+    name: 'Lascas de Chocolate (250g)', 
+    basePrice: 49.00, 
+    costPrice: 14.00, 
     category: 'Chocolate', 
     imageUrl: '', 
     measureUnit: 'un', 
