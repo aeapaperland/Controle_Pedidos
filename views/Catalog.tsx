@@ -342,7 +342,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, onBack, onDelete, onAdd, on
                         <div className="flex items-center justify-between pt-3 border-t border-gray-50 mt-auto">
                             <div className="flex flex-col">
                                 <span className="text-[10px] text-gray-400 uppercase">Valor</span>
-                                <span className="text-lg font-bold text-rose-600">R$ {product.basePrice.toFixed(2)}</span>
+                                <span className="text-lg font-bold text-rose-600">{product.basePrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                             </div>
                             <div className="flex gap-1">
                                 <button onClick={() => handleOpenEditModal(product)} className="p-2 bg-gray-50 hover:bg-rose-50 text-gray-500 hover:text-rose-600 rounded-lg transition-colors"><Edit2 size={16}/></button>
