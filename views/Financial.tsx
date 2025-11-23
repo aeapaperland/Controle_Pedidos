@@ -284,7 +284,7 @@ const Financial: React.FC<FinancialProps> = ({ transactions, setTransactions, on
             <div className="flex justify-between items-start">
                 <div>
                     <p className="text-sm text-gray-500 font-medium mb-1">Receitas (Caixa)</p>
-                    <h3 className="text-2xl font-bold text-green-600">R$ {totals.income.toFixed(2)}</h3>
+                    <h3 className="text-2xl font-bold text-green-600">{totals.income.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h3>
                 </div>
                 <div className="p-3 bg-green-50 rounded-full text-green-600">
                     <TrendingUp size={24} />
@@ -295,7 +295,7 @@ const Financial: React.FC<FinancialProps> = ({ transactions, setTransactions, on
                 <div className="mt-3 pt-3 border-t border-green-50">
                     <div className="flex items-center gap-1 text-green-700 text-sm">
                         <Plus size={14} />
-                        <span className="font-bold">R$ {currentPeriodPending.toFixed(2)}</span>
+                        <span className="font-bold">{currentPeriodPending.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                     </div>
                     <p className="text-xs text-gray-400">a receber neste período</p>
                 </div>
@@ -304,7 +304,7 @@ const Financial: React.FC<FinancialProps> = ({ transactions, setTransactions, on
         <div className="bg-white p-6 rounded-xl shadow-sm border border-red-100 flex items-center justify-between">
             <div>
                 <p className="text-sm text-gray-500 font-medium mb-1">Despesas</p>
-                <h3 className="text-2xl font-bold text-red-600">R$ {totals.expense.toFixed(2)}</h3>
+                <h3 className="text-2xl font-bold text-red-600">{totals.expense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h3>
             </div>
             <div className="p-3 bg-red-50 rounded-full text-red-600">
                 <TrendingDown size={24} />
@@ -314,7 +314,7 @@ const Financial: React.FC<FinancialProps> = ({ transactions, setTransactions, on
             <div>
                 <p className="text-sm text-gray-500 font-medium mb-1">Saldo do Período</p>
                 <h3 className={`text-2xl font-bold ${totals.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                    R$ {totals.balance.toFixed(2)}
+                    {totals.balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </h3>
             </div>
             <div className="p-3 bg-blue-50 rounded-full text-blue-600">
@@ -324,7 +324,7 @@ const Financial: React.FC<FinancialProps> = ({ transactions, setTransactions, on
         <div className="bg-white p-6 rounded-xl shadow-sm border border-purple-100 flex items-center justify-between relative overflow-hidden">
             <div className="relative z-10">
                 <p className="text-sm text-gray-500 font-medium mb-1">Provisão (Próx. Mês)</p>
-                <h3 className="text-2xl font-bold text-purple-600">R$ {nextPeriodProvision.toFixed(2)}</h3>
+                <h3 className="text-2xl font-bold text-purple-600">{nextPeriodProvision.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h3>
             </div>
             <div className="p-3 bg-purple-50 rounded-full text-purple-600 relative z-10">
                 <CalendarClock size={24} />
@@ -345,9 +345,9 @@ const Financial: React.FC<FinancialProps> = ({ transactions, setTransactions, on
                         <ComposedChart data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 0 }}>
                             <CartesianGrid stroke="#f5f5f5" vertical={false} />
                             <XAxis dataKey="displayDate" tickLine={false} axisLine={false} tick={{fontSize: 12}} interval="preserveStartEnd" />
-                            <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `R$${value}`} tick={{fontSize: 12}} />
+                            <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} tick={{fontSize: 12}} />
                             <Tooltip 
-                                formatter={(value: number) => [`R$ ${value.toFixed(2)}`]}
+                                formatter={(value: number) => [value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })]}
                                 labelFormatter={(label) => `Data: ${label}`}
                                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                             />
