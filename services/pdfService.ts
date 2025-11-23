@@ -3,10 +3,9 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Order, OrderItem, Product, Transaction } from "../types";
 
-// Placeholder logo (Cake Icon)
-const LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAnFBMVEUAAAD/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr/ysr///89VO2VAAAAMXRSTlMAEvwT/Bf8G/we/CL8Jvwr/C/8M/w0/Dj8PPxB/ET8RvxK/E78UfxV/Fn8XPxg/GX8k0rS0wAAAAFiS0dEAIgFHUgAAAAJcEhZcwAADsIAAA7CARUoSoAAAAAHdElNRQfoCw4LKB8jZ4+yAAAAcElEQVRIx+3WQQ6AIAxE0R8K97/kFly4MSY2aqWJbzId8tJQSmt9S/I2HAUAAACfQo/AvAPzDsw7MO/AvAPzDsw7MO/AvAPzDsw7MO/AvAPzDsw7MO/AvAPzDsw7MO/AvAPzDsw7MO/AvAPzDsw7MO/AvAPzDsw7MO/AvAPzDsw7MO/AvAPzDsw78N8VYOML+e4C188h76YAAAAldEVYdGRhdGU6Y3JlYXRlADIwMjQtMTEtMTRUMTE6NDA6MzErMDA6MDA6W+0AAAAldEVYdGRhdGU6bW9kaWZ5ADIwMjQtMTEtMTRUMTE6NDA6MzErMDA6MDCZ2WkFAAAAAElFTkSuQmCC";
+// Logo A&A Delícias (Simulado nas cores da marca)
+const LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAACXBIWXMAAAsTAAALEwEAmpwYAAAFE0lEQVR4nO2dS2zcVRSGv3H8tJM2adM0j5aW8mh5tjwCpBSkFKhFQYtYILEBsaEbQmzYwIYVCzaICiS2bJAqsQGxQYUEKgUSEqC0QJvSeUzTPOZp5/H433Fm4sR2/JtMxp4jR7Y8987//ufec+/x3DOex+MhIiKSHbYwd60t1B0sC3VfLgt1h8tC3aGyUPcoC3VfLo91h8pj3aHwWPe18Fh3KDzWfS081h0Kj3VfC491h8Jj3dfCY92h8Fj3tfBYdyg81n0tPNYdCo91XwuPdYfCY93XwmPdoeTu0Z6B/v6Wttb6uvq6utqamupqf1Wlv6LcX17u8/nKysp8Xq/H7XG7XU6nw2632Ww2q8VstphNBr3eqNfpdDqNulCj0SgXajQalX83o9FkMllstsI3uVwuj8fj8XjK/eXlfv9/319V6a+pqampra2pq6u92dLU1N/f0z2wd8+u5kQ8FokE/H7fwn83v98XiURiTjQaaW5q2rNrZ8/Anu7uBPy+42fOnu/o6LzU2Xm5q+tK15UrXV1Xrlzp7LzU2Xm+4+TZc/3x+L5dO5qCgQW+yQUCAW80Gtm3a0d//7lzF7qutI8M35yZmZ2bm5+fX1hcWl5ZXVtf39jcuLG1vbO7t39wcHh0fHJ6dn5x6crwjekrV6/1Xb7S2Xnu/PneRDy2c3tzJe/xAqGgNxGP9fX1Xrx0ZWR0bHpmdn5hcWl5ZXVtfWNz68bW9s7u3v7B4dHx8cnp2fnFpctD12eu9l3u6r5w8WJv/9mz8f27WysV8gKBoDe+f3df36Wrr46Mjs3Mzi0sLi2vrK6tr29ubt3Y3tnd298/ODw6Pjk9O7+4dGXo+szVvstXOjovXLzY23/2bCL+7K6K398LhILeRDzWd/HildGx6Zm5haWlldW19Y3NrRvbO7t7+weHR8cnp2fnF5eGrg9d77t8pbPz/IX+3sT+eDy+e1elQ14gFPSmkonsxUuXh0dGZ+fmFxaXltfW1zc2t25s7+zu7R8cHh2fnJ6dX1y6MnR95mrf5SsdnRc+PtuT2B+P79lV0Xt0gVDQm0jE9/Vd6rry6ujY9MzcwtLyymrbP79ubO/s7h0cHB4dn5yenV9cGbo+c7Xvclf3hYvnexP7E/H4nl2VvscLhILeRDzW19d38dKVkdGx6ZnZ+YXFpeWV1bX1jc2tG9s7u3v7B4dHx8cnp2fnF5eGrg9dn7nad/lyZ+f5Cxd7E/vj8X17KhnxAqGgNxGP9e/f13fp6q9Gx2Zm5xaWllfW1jc2t25s7+zu7R8cHh2fnJ6dX1wauj5zre/ylc7O8xcv9ibix/ftrnjEC4SC3kQ8tr+v7+KlKyOjY9Mzc/MLi0vLK6tr6xubWze2d3b39g8Oj45PTs/OLy5dGbo+c7Xvclfn+QsXexP74/H4nl0VjXiBUNAbj8f6L/b1XbxyZXRsemZucWl5ZXVtfWNz68b2zu7e/sHh0fHJ6dn5xaWh60PX+y5f6ew8f+F8b2J/Ir5vT0UjXiAU9Cbisb6+vjcvXh4ZHZudm19YWl5b39jcurG9s7u3f3B4dHxienZ+cenK0PWZq32Xu7o+Pt+b2B+Px+PxigZ8gVDQm0jE+z/q67vU1TUyOjY9M7ewtLyytm7/59f2zu7e/sHh0fHJ6dn5xaWh6zNX+y53dV/o7+tN7E/E4/F4RQO+QChY4b/n+F/h/1Xh/13h/7WwUPflslB3uCzUHSr/WSEiIiIiu81ms91ut9vtdrPZbLVarVar1Wq1Wq1Wq9VqtVqtVqvVarVarVar1Wq1Wq1W6z/yFwGfrgljITAfAAAAAElFTkSuQmCC";
 
-// Helper to fetch image from URL and convert to Base64 for PDF with Timeout
 const getBase64FromUrl = async (url: string): Promise<string | null> => {
   if (!url) return null;
   try {
@@ -35,35 +34,36 @@ export const generateOrderPDF = (order: Order) => {
   const doc = new jsPDF();
 
   // --- COLORS ---
-  const PRIMARY_COLOR = [106, 27, 154]; // Roxo Escuro
+  const PRIMARY_COLOR = [190, 18, 60]; // Rose 700 (Cor da marca)
   const SECONDARY_COLOR = [225, 190, 231]; // Lilás Claro
 
   // --- HEADER ---
   try {
-    doc.addImage(LOGO_BASE64, 'PNG', 95, 10, 20, 20);
+    // Logo centralizado e maior
+    doc.addImage(LOGO_BASE64, 'PNG', 90, 10, 30, 30);
   } catch (e) {
     console.error("Error adding logo to PDF:", e);
   }
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.setTextColor(194, 24, 91);
-  doc.text("A&A Delícias", 105, 35, { align: "center" });
+  doc.setFontSize(18);
+  doc.setTextColor(190, 18, 60); // Rose
+  doc.text("A&A Delícias", 105, 48, { align: "center" });
 
-  doc.setFontSize(8);
+  doc.setFontSize(10);
   doc.setTextColor(100, 100, 100);
-  doc.text("Doces Personalizados", 14, 15);
-  doc.text("Contato: (11) 99999-9999", 195, 15, { align: "right" });
+  doc.text("Doces Personalizados", 105, 54, { align: "center" });
+  doc.text("(11) 99999-9999", 105, 60, { align: "center" });
 
   doc.setFontSize(16);
-  doc.setTextColor(106, 27, 154);
-  doc.text("PEDIDO / ORÇAMENTO", 105, 45, { align: "center" });
+  doc.setTextColor(106, 27, 154); // Roxo
+  doc.text("PEDIDO / ORÇAMENTO", 105, 75, { align: "center" });
 
   doc.setDrawColor(200, 200, 200);
-  doc.line(14, 48, 196, 48);
+  doc.line(14, 78, 196, 78);
 
   // --- CLIENT & EVENT INFO ---
-  const startY = 55;
+  const startY = 85;
   doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
 
@@ -100,7 +100,6 @@ export const generateOrderPDF = (order: Order) => {
   doc.text(order.theme || "", 28, startY + 18);
 
   // --- TABLE ---
-  // Nota: Itens de preço zero (componentes de kits) são exibidos normalmente
   const aggregatedItemsMap = new Map<string, OrderItem>();
   (order.items || []).forEach(item => {
       const key = `${item.productId}-${item.details || ''}-${item.unitPrice}`;
@@ -126,6 +125,15 @@ export const generateOrderPDF = (order: Order) => {
           'Frete / Entrega', 
           '', 
           (order.deliveryFee || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+      ]);
+  }
+  
+  if (order.discount && order.discount > 0) {
+      tableBody.push([
+          '', 
+          'Desconto', 
+          '', 
+          `- ${(order.discount || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`
       ]);
   }
 
@@ -161,26 +169,30 @@ export const generateOrderPDF = (order: Order) => {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.text("Total Geral:", 140, finalY);
-  doc.setTextColor(106, 27, 154);
+  doc.setTextColor(190, 18, 60); // Rose
   doc.text((order.totalPrice || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 170, finalY);
   doc.setTextColor(0, 0, 0);
 
   // --- FOOTER ---
   const footerY = finalY + 20;
   doc.setDrawColor(200, 200, 200);
-  doc.rect(14, footerY, 182, 30); 
+  doc.rect(14, footerY, 182, 35); 
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "bold");
   doc.text("Forma de Pagamento:", 18, footerY + 8);
   doc.setFont("helvetica", "normal");
   doc.text("50% no ato da encomenda e 50% na entrega.", 18, footerY + 14);
-  doc.text("Pix ou Cartão.", 18, footerY + 20);
+  doc.text("Pix (Chave: CNPJ/Celular) ou Cartão de Crédito.", 18, footerY + 20);
 
   doc.setFont("helvetica", "bold");
   doc.text("Validade do Orçamento:", 110, footerY + 8);
   doc.setFont("helvetica", "normal");
   doc.text("5 dias úteis.", 110, footerY + 14);
+  
+  doc.setFontSize(8);
+  doc.setTextColor(150, 150, 150);
+  doc.text("Obrigada pela preferência! Produzido com amor por A&A Delícias.", 105, footerY + 42, { align: "center" });
 
   const cleanName = (order.customerName || "cliente").replace(/\s+/g, '_');
   doc.save(`orcamento_${cleanName}.pdf`);
