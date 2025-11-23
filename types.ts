@@ -52,6 +52,7 @@ export interface Order {
   dueTime: string;
   location: string;
   deliveryFee?: number; // Taxa de entrega
+  discount?: number; // Desconto
   totalPrice: number;
   // clientBudget removido conforme solicitação
   status: OrderStatus;
