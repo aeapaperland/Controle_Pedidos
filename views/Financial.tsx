@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Transaction, Order, OrderStatus } from '../types';
 import { ArrowLeft, Plus, TrendingUp, TrendingDown, DollarSign, Filter, Trash2, X, Save, Calendar, Settings, CalendarClock, Printer } from 'lucide-react';
@@ -478,6 +479,7 @@ const Financial: React.FC<FinancialProps> = ({ transactions, setTransactions, on
                         <label className="block text-xs font-medium text-gray-600 mb-1">Valor (R$)</label>
                         <input 
                             type="number" 
+                            step="0.01"
                             className="w-full p-2 border rounded-lg bg-gray-50" 
                             placeholder="0.00"
                             value={newTransaction.amount === 0 ? '' : newTransaction.amount}
