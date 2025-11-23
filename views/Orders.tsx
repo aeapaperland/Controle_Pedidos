@@ -446,7 +446,7 @@ const Orders: React.FC<OrdersProps> = ({
 
                 <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                    <div className="text-lg font-bold text-gray-800">
-                      R$ {order.totalPrice.toFixed(2)}
+                      {order.totalPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                    </div>
                    <div className="flex gap-2">
                       {/* Botão de impressão (Gera PDF) */}
@@ -589,7 +589,7 @@ const Orders: React.FC<OrdersProps> = ({
                                 >
                                     <option value="">Selecione...</option>
                                     {products.map(p => (
-                                        <option key={p.id} value={p.id}>{p.name} (R$ {p.basePrice.toFixed(2)})</option>
+                                        <option key={p.id} value={p.id}>{p.name} ({p.basePrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})</option>
                                     ))}
                                 </select>
                             </div>
@@ -607,11 +607,11 @@ const Orders: React.FC<OrdersProps> = ({
                                 <div className="relative">
                                     <span className="absolute left-2 top-2 text-sm text-gray-500">R$</span>
                                     <input 
-                                        type="number"
-                                        step="0.01"
-                                        className="w-full pl-8 p-2 border border-gray-300 rounded-lg"
-                                        value={itemPrice}
-                                        onChange={e => setItemPrice(Number(e.target.value))}
+                                        type="text"
+                                        className="w-full pl-8 p-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                                        value={itemPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                        readOnly
+                                        disabled
                                     />
                                 </div>
                             </div>
@@ -639,8 +639,8 @@ const Orders: React.FC<OrdersProps> = ({
                                         <tr key={idx} className={item.unitPrice === 0 ? 'bg-gray-50 text-gray-500 italic' : ''}>
                                             <td className="p-3">{item.quantity}</td>
                                             <td className="p-3">{item.name}</td>
-                                            <td className="p-3 text-right">{item.unitPrice === 0 ? '-' : `R$ ${item.unitPrice.toFixed(2)}`}</td>
-                                            <td className="p-3 text-right">{item.unitPrice === 0 ? '-' : `R$ ${(item.quantity * item.unitPrice).toFixed(2)}`}</td>
+                                            <td className="p-3 text-right">{item.unitPrice === 0 ? '-' : item.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td className="p-3 text-right">{item.unitPrice === 0 ? '-' : (item.quantity * item.unitPrice).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                                             <td className="p-3 text-right">
                                                 {item.unitPrice > 0 && (
                                                     <button onClick={() => handleRemoveItem(item.id)} className="text-red-400 hover:text-red-600">
@@ -698,7 +698,7 @@ const Orders: React.FC<OrdersProps> = ({
 
                              <div className="flex justify-between items-center text-xl font-bold text-rose-600 pt-2 border-t border-gray-200">
                                 <span>Total:</span>
-                                <span>R$ {(newOrder.totalPrice || 0).toFixed(2)}</span>
+                                <span>{(newOrder.totalPrice || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                              </div>
                         </div>
                     </section>
