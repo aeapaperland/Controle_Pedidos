@@ -123,6 +123,16 @@ export const generateOrderPDF = (order: Order, customLogo?: string) => {
       ]);
   }
 
+  // Add Discount Row if applicable
+  if (order.discount && order.discount > 0) {
+      tableBody.push([
+          '', 
+          'Desconto', 
+          '', 
+          `- R$ ${(order.discount || 0).toFixed(2)}`
+      ]);
+  }
+
   autoTable(doc, {
     startY: startY + 25,
     head: [['Qtd', 'Descrição', 'Valor Unit.', 'Total']],
