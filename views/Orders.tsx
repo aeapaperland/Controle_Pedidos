@@ -19,23 +19,26 @@ interface OrdersProps {
 
 // Definição da composição dos Kits para explosão automática de itens
 const KITS_COMPOSITION: Record<string, { id: string, qty: number }[]> = {
-  'prod_kit_1': [ // Kit P
-    { id: 'prod_donut_mini', qty: 5 },
-    { id: 'prod_pirulito', qty: 5 },
-    { id: 'prod_trufa', qty: 5 }
-  ],
-  'prod_kit_2': [ // Kit M
+  'prod_kit_1': [ // Kit 1 - R$ 426,00
     { id: 'prod_donut_mini', qty: 10 },
-    { id: 'prod_pirulito', qty: 10 },
-    { id: 'prod_cupcake', qty: 10 },
-    { id: 'prod_pdm_med', qty: 5 }
+    { id: 'prod_cakepop', qty: 5 },
+    { id: 'prod_pdm_mini', qty: 5 },
+    { id: 'prod_pirulito', qty: 5 },
+    { id: 'prod_cupcake', qty: 5 }
   ],
-  'prod_kit_3': [ // Kit G
-    { id: 'prod_donut_mini', qty: 15 },
-    { id: 'prod_pirulito', qty: 15 },
-    { id: 'prod_cupcake', qty: 15 },
-    { id: 'prod_trufa', qty: 10 },
-    { id: 'prod_popscicle', qty: 10 }
+  'prod_kit_2': [ // Kit 2 - R$ 677,00
+    { id: 'prod_donut_mini', qty: 20 },
+    { id: 'prod_cakepop', qty: 8 },
+    { id: 'prod_pdm_mini', qty: 8 },
+    { id: 'prod_pirulito', qty: 8 },
+    { id: 'prod_cupcake', qty: 8 }
+  ],
+  'prod_kit_3': [ // Kit 3 - R$ 852,00
+    { id: 'prod_donut_mini', qty: 30 },
+    { id: 'prod_cakepop', qty: 10 },
+    { id: 'prod_pdm_mini', qty: 10 },
+    { id: 'prod_pirulito', qty: 10 },
+    { id: 'prod_cupcake', qty: 10 }
   ]
 };
 
