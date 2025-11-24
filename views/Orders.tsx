@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Order, OrderStatus, ProductionStage, Product, OrderItem, Customer, Transaction } from '../types';
-import { Plus, Search, Filter, MessageCircle, Sparkles, Save, X, Trash2, FileText, ShoppingBag, Printer, Edit, ArrowLeft, User, Share2, Truck } from 'lucide-react';
+import { Plus, Search, Filter, MessageCircle, Sparkles, Save, X, Trash2, FileText, ShoppingBag, Printer, Edit, ArrowLeft, User, Share2, Truck, Percent } from 'lucide-react';
 import { generateWhatsappMessage } from '../services/geminiService';
 import { generateOrderPDF } from '../services/pdfService';
 
@@ -55,6 +55,7 @@ const Orders: React.FC<OrdersProps> = ({
     dueDate: new Date().toISOString().split('T')[0],
     totalPrice: 0,
     deliveryFee: 0,
+    discount: 0,
     birthdayPersonName: '',
     birthdayPersonAge: undefined
   });
@@ -97,9 +98,9 @@ const Orders: React.FC<OrdersProps> = ({
     }
   };
 
-  const calculateTotal = (items: OrderItem[], delivery: number) => {
+  const calculateTotal = (items: OrderItem[], delivery: number, discount: number) => {
       const itemsTotal = items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
-      return itemsTotal + (delivery || 0);
+      return Math.max(0, itemsTotal + (delivery || 0) - (discount || 0));
   };
 
   const handleAddItem = () => {
@@ -157,7 +158,7 @@ const Orders: React.FC<OrdersProps> = ({
     // Adiciona os novos itens à lista existente
     itemsToAdd.forEach(item => currentItems.push(item));
 
-    const updatedTotal = calculateTotal(currentItems, newOrder.deliveryFee || 0);
+    const updatedTotal = calculateTotal(currentItems, newOrder.deliveryFee || 0, newOrder.discount || 0);
 
     setNewOrder({
         ...newOrder,
@@ -173,7 +174,7 @@ const Orders: React.FC<OrdersProps> = ({
 
   const handleRemoveItem = (itemId: string) => {
       const updatedItems = (newOrder.items || []).filter(i => i.id !== itemId);
-      const updatedTotal = calculateTotal(updatedItems, newOrder.deliveryFee || 0);
+      const updatedTotal = calculateTotal(updatedItems, newOrder.deliveryFee || 0, newOrder.discount || 0);
       setNewOrder({
           ...newOrder,
           items: updatedItems,
@@ -183,7 +184,7 @@ const Orders: React.FC<OrdersProps> = ({
 
   const handleDeliveryFeeChange = (val: number) => {
       const fee = isNaN(val) ? 0 : val;
-      const updatedTotal = calculateTotal(newOrder.items || [], fee);
+      const updatedTotal = calculateTotal(newOrder.items || [], fee, newOrder.discount || 0);
       setNewOrder({
           ...newOrder,
           deliveryFee: fee,
@@ -191,8 +192,22 @@ const Orders: React.FC<OrdersProps> = ({
       });
   };
 
+  const handleDiscountChange = (val: number) => {
+      const discount = isNaN(val) ? 0 : val;
+      const updatedTotal = calculateTotal(newOrder.items || [], newOrder.deliveryFee || 0, discount);
+      setNewOrder({
+          ...newOrder,
+          discount: discount,
+          totalPrice: updatedTotal
+      });
+  };
+
   const handleEditOrder = (order: Order) => {
-    setNewOrder({ ...order, deliveryFee: order.deliveryFee || 0 });
+    setNewOrder({ 
+        ...order, 
+        deliveryFee: order.deliveryFee || 0,
+        discount: order.discount || 0 
+    });
     setIsModalOpen(true);
   };
 
@@ -208,7 +223,7 @@ const Orders: React.FC<OrdersProps> = ({
     }
     
     const itemsTotal = newOrder.items?.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0) || 0;
-    const calculatedTotal = itemsTotal + (newOrder.deliveryFee || 0);
+    const calculatedTotal = Math.max(0, itemsTotal + (newOrder.deliveryFee || 0) - (newOrder.discount || 0));
 
     let savedOrderId = newOrder.id;
 
@@ -223,6 +238,7 @@ const Orders: React.FC<OrdersProps> = ({
         dueTime: newOrder.dueTime || '00:00',
         location: newOrder.location || '',
         deliveryFee: newOrder.deliveryFee || 0,
+        discount: newOrder.discount || 0,
         totalPrice: calculatedTotal,
         status: newOrder.status || OrderStatus.ORCAMENTO,
         productionStage: newOrder.productionStage || ProductionStage.PRE_PREPARO,
@@ -319,6 +335,7 @@ const Orders: React.FC<OrdersProps> = ({
           dueDate: new Date().toISOString().split('T')[0], 
           totalPrice: 0, 
           deliveryFee: 0,
+          discount: 0,
           birthdayPersonName: '',
           birthdayPersonAge: undefined,
           dueTime: ''
@@ -769,6 +786,20 @@ const Orders: React.FC<OrdersProps> = ({
                                     value={newOrder.deliveryFee === 0 ? '' : newOrder.deliveryFee}
                                     placeholder="0.00"
                                     onChange={e => handleDeliveryFeeChange(parseFloat(e.target.value))}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex justify-between items-center text-sm text-red-600">
+                            <span className="flex items-center gap-1 font-medium"><Percent size={14}/> Desconto:</span>
+                            <div className="relative w-28">
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-red-400 text-xs">- R$</span>
+                                <input 
+                                    type="number" 
+                                    className="w-full pl-8 p-1 text-right border rounded focus:outline-none focus:border-red-500 bg-white text-red-600"
+                                    value={newOrder.discount === 0 ? '' : newOrder.discount}
+                                    placeholder="0.00"
+                                    onChange={e => handleDiscountChange(parseFloat(e.target.value))}
                                 />
                             </div>
                         </div>
