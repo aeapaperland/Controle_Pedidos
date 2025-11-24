@@ -153,39 +153,39 @@ const INITIAL_PRODUCTS: Product[] = [
     description: 'Coleção temática especial contendo 6 biscoitos decorados.'
   },
 
-  // 6. Kits Personalizados (Subcampos solicitados)
+  // 6. Kits Personalizados (Subcampos solicitados - ATUALIZADOS)
   { 
     id: 'prod_kit_1', 
     name: 'Kit Personalizado 1', 
-    basePrice: 150.00, 
-    costPrice: 50.00, 
-    category: 'Kit Festa', 
-    imageUrl: '', 
-    measureUnit: 'un', 
-    productionTimeMinutes: 120,
-    description: 'Kit P: 5 Mini Donuts, 5 Pirulitos, 5 Trufas.'
-  },
-  { 
-    id: 'prod_kit_2', 
-    name: 'Kit Personalizado 2', 
-    basePrice: 280.00, 
-    costPrice: 90.00, 
-    category: 'Kit Festa', 
-    imageUrl: '', 
-    measureUnit: 'un', 
-    productionTimeMinutes: 240,
-    description: 'Kit M: 10 Mini Donuts, 10 Pirulitos, 10 Cupcakes, 5 Pães de Mel.'
-  },
-  { 
-    id: 'prod_kit_3', 
-    name: 'Kit Personalizado 3', 
-    basePrice: 450.00, 
+    basePrice: 426.00, 
     costPrice: 150.00, 
     category: 'Kit Festa', 
     imageUrl: '', 
     measureUnit: 'un', 
-    productionTimeMinutes: 360,
-    description: 'Kit G: 15 Mini Donuts, 15 Pirulitos, 15 Cupcakes, 10 Trufas, 10 PopsCicles.'
+    productionTimeMinutes: 180,
+    description: '10 Mini Donuts, 5 Cake Pops, 5 Pães de Mel (mini), 5 Pirulitos, 5 Cupcakes.'
+  },
+  { 
+    id: 'prod_kit_2', 
+    name: 'Kit Personalizado 2', 
+    basePrice: 677.00, 
+    costPrice: 250.00, 
+    category: 'Kit Festa', 
+    imageUrl: '', 
+    measureUnit: 'un', 
+    productionTimeMinutes: 300,
+    description: '20 Mini Donuts, 8 Cake Pops, 8 Pães de Mel (mini), 8 Pirulitos, 8 Cupcakes.'
+  },
+  { 
+    id: 'prod_kit_3', 
+    name: 'Kit Personalizado 3', 
+    basePrice: 852.00, 
+    costPrice: 350.00, 
+    category: 'Kit Festa', 
+    imageUrl: '', 
+    measureUnit: 'un', 
+    productionTimeMinutes: 420,
+    description: '30 Mini Donuts, 10 Cake Pops, 10 Pães de Mel (mini), 10 Pirulitos, 10 Cupcakes.'
   },
 
   // 7. Pão de Mel (Subcampos solicitados)
@@ -222,18 +222,7 @@ const INITIAL_PRODUCTS: Product[] = [
     productionTimeMinutes: 35,
     description: 'Decorado no palito, excelente para compor a mesa.'
   },
-  // 8. Bolo Bombom
-  { 
-    id: 'prod_bolo_bombom', 
-    name: 'Bolo Bombom', 
-    basePrice: 65.00, 
-    costPrice: 20.00, 
-    category: 'Bolo', 
-    imageUrl: '', 
-    measureUnit: 'kg', 
-    productionTimeMinutes: 90,
-    description: 'Bolo com cobertura de chocolate (casca) e recheio cremoso.'
-  },
+  // Bolo Bombom REMOVIDO
 ];
 
 const INITIAL_CUSTOMERS: Customer[] = [];
