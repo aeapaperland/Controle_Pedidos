@@ -4,7 +4,7 @@ import Dashboard from './views/Dashboard';
 import Orders from './views/Orders';
 import Catalog from './views/Catalog';
 import Financial from './views/Financial';
-import { Menu, X, LayoutDashboard, ShoppingBag, BookOpen, DollarSign, LogOut } from 'lucide-react';
+import { Menu, X, LayoutDashboard, ShoppingBag, BookOpen, DollarSign, LogOut, Camera, Upload } from 'lucide-react';
 import { Order, Product, Customer, Transaction, OrderStatus, InventoryItem, ProductionStage } from './types';
 
 // Mock Data (Initial State)
@@ -108,9 +108,9 @@ const INITIAL_PRODUCTS: Product[] = [
   },
   { 
     id: 'prod_lascas', 
-    name: 'Lascas de Chocolate (250g)', 
-    basePrice: 49.00, 
-    costPrice: 14.00, 
+    name: 'Lascas de Chocolate Decoradas', 
+    basePrice: 28.00, 
+    costPrice: 8.00, 
     category: 'Chocolate', 
     imageUrl: '', 
     measureUnit: 'un', 
@@ -222,6 +222,18 @@ const INITIAL_PRODUCTS: Product[] = [
     productionTimeMinutes: 35,
     description: 'Decorado no palito, excelente para compor a mesa.'
   },
+  // 8. Bolo Bombom
+  { 
+    id: 'prod_bolo_bombom', 
+    name: 'Bolo Bombom', 
+    basePrice: 65.00, 
+    costPrice: 20.00, 
+    category: 'Bolo', 
+    imageUrl: '', 
+    measureUnit: 'kg', 
+    productionTimeMinutes: 90,
+    description: 'Bolo com cobertura de chocolate (casca) e recheio cremoso.'
+  },
 ];
 
 const INITIAL_CUSTOMERS: Customer[] = [];
@@ -244,6 +256,11 @@ function App() {
   const [customers, setCustomers] = useState<Customer[]>(INITIAL_CUSTOMERS);
   const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS);
   const [inventory, setInventory] = useState<InventoryItem[]>(INITIAL_INVENTORY);
+  
+  // Logo State (Persisted)
+  const [logo, setLogo] = useState<string>(() => {
+    return localStorage.getItem('appLogo') || '';
+  });
 
   const menuItems = [
     { id: 'dashboard', label: 'Painel', icon: <LayoutDashboard size={20} /> },
@@ -271,10 +288,24 @@ function App() {
     setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
   };
 
+  // Handle Logo Upload
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setLogo(base64);
+        localStorage.setItem('appLogo', base64);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard orders={orders} onNavigate={handleNavigate} />;
+        return <Dashboard orders={orders} onNavigate={handleNavigate} logo={logo} />;
       case 'orders':
         return (
           <Orders 
@@ -286,6 +317,7 @@ function App() {
             setCustomers={setCustomers}
             setTransactions={setTransactions}
             onBack={() => setCurrentView('dashboard')}
+            logo={logo}
           />
         );
       case 'catalog':
@@ -305,10 +337,11 @@ function App() {
              setTransactions={setTransactions} 
              onBack={() => setCurrentView('dashboard')}
              orders={orders}
+             logo={logo}
           />
         );
       default:
-        return <Dashboard orders={orders} onNavigate={handleNavigate} />;
+        return <Dashboard orders={orders} onNavigate={handleNavigate} logo={logo} />;
     }
   };
 
@@ -319,11 +352,32 @@ function App() {
       <header className="bg-white border-b border-rose-100 shadow-sm z-20 flex-shrink-0 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
-            {/* Logo Section */}
-            <div className="flex-shrink-0 flex items-center cursor-pointer" onClick={() => handleNavigate('dashboard')}>
-               <div className="text-3xl font-script text-rose-600 font-bold select-none">
-                  A&A Delícias
-               </div>
+            {/* Logo Section (Clickable for Upload) */}
+            <div className="flex-shrink-0 flex items-center">
+               <label className="cursor-pointer relative group flex items-center gap-2" title="Clique para alterar a logo">
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={handleLogoUpload}
+                  />
+                  {logo ? (
+                    <div className="relative w-10 h-10 rounded-full overflow-hidden border border-rose-100">
+                      <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                         <Camera size={16} className="text-white" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-500 group-hover:bg-rose-200 transition-colors">
+                       <Upload size={20} />
+                    </div>
+                  )}
+                  
+                  <div className="text-3xl font-script text-rose-600 font-bold select-none">
+                     {logo ? 'A&A Delícias' : 'A&A Delícias'}
+                  </div>
+               </label>
             </div>
 
             {/* Desktop Navigation */}
