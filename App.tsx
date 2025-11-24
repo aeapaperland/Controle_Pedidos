@@ -373,10 +373,7 @@ function App() {
                        <Upload size={20} />
                     </div>
                   )}
-                  
-                  <div className="text-3xl font-script text-rose-600 font-bold select-none">
-                     {logo ? 'A&A Delícias' : 'A&A Delícias'}
-                  </div>
+                  {/* Text Removed as requested */}
                </label>
             </div>
 
