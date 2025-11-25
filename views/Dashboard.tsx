@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Order, OrderStatus, OrderItem } from '../types';
-import { Calendar, ClipboardList, BookOpen, DollarSign, Clock, Share2, X, Sparkles, MessageCircle, Gift } from 'lucide-react';
+import { Calendar, ClipboardList, BookOpen, DollarSign, Clock, Share2, X, Sparkles, MessageCircle, Gift, FileText, AlertCircle } from 'lucide-react';
 import { generateWeeklyReportPDF } from '../services/pdfService';
 
 interface DashboardProps {
@@ -39,6 +39,9 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
 
   const ordersWeekList = useMemo(() => {
       return orders.filter(o => {
+        // Exclude Budgets from Weekly Deliveries
+        if (o.status === OrderStatus.ORCAMENTO) return false;
+
         const [y, m, d] = o.dueDate.split('-').map(Number);
         const orderDate = new Date(y, m - 1, d);
         orderDate.setHours(0, 0, 0, 0);
@@ -53,10 +56,22 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
 
   const ordersWeekCount = ordersWeekList.length;
 
-  // Next Events (Upcoming orders)
+  // 3. Pending Budgets (New Section)
+  const pendingBudgets = useMemo(() => {
+      return orders
+        .filter(o => o.status === OrderStatus.ORCAMENTO)
+        .sort((a, b) => {
+            // Sort by Due Date (Ascending) to show urgency
+            const dateA = new Date(a.dueDate + 'T00:00:00').getTime();
+            const dateB = new Date(b.dueDate + 'T00:00:00').getTime();
+            return dateA - dateB;
+        });
+  }, [orders]);
+
+  // 4. Next Events (Upcoming orders - EXCLUDING Budgets)
   const nextEvents = orders
     .filter(o => {
-        if (o.status === OrderStatus.ENTREGUE || o.status === OrderStatus.FINALIZADO) return false;
+        if (o.status === OrderStatus.ENTREGUE || o.status === OrderStatus.FINALIZADO || o.status === OrderStatus.ORCAMENTO) return false;
         
         const [y, m, d] = o.dueDate.split('-').map(Number);
         const orderDate = new Date(y, m - 1, d);
@@ -276,48 +291,94 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
         </div>
       )}
 
-      {/* Upcoming Events */}
-      <div className="bg-white rounded-xl shadow-sm border border-rose-100 p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <Calendar size={20} className="text-rose-500"/>
-              Próximas Entregas
-          </h3>
-          <div className="space-y-3">
-              {nextEvents.length === 0 ? (
-                  <p className="text-gray-400 text-sm">Nenhuma entrega próxima agendada.</p>
-              ) : (
-                  nextEvents.map(order => (
-                      <div key={order.id} className="p-3 bg-gray-50 rounded-lg hover:bg-rose-50 transition-colors border border-transparent hover:border-rose-100">
-                          <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-3">
-                                  <div className="bg-white p-2 rounded border text-center min-w-[50px]">
-                                      <span className="block text-xs text-gray-500 uppercase">{new Date(order.dueDate + 'T00:00:00').toLocaleString('pt-BR', { month: 'short' })}</span>
-                                      <span className="block text-lg font-bold text-rose-600">{new Date(order.dueDate + 'T00:00:00').getDate()}</span>
-                                  </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Pending Budgets Section */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col">
+              <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                      <FileText size={20} className="text-gray-500"/>
+                      Orçamentos Pendentes
+                  </h3>
+                  <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded-full">
+                      {pendingBudgets.length}
+                  </span>
+              </div>
+              
+              <div className="space-y-3 flex-1 overflow-y-auto max-h-[300px] pr-1">
+                  {pendingBudgets.length === 0 ? (
+                      <div className="h-full flex flex-col items-center justify-center text-gray-400 py-8">
+                          <AlertCircle size={32} className="mb-2 opacity-20" />
+                          <p className="text-sm">Nenhum orçamento em aberto.</p>
+                      </div>
+                  ) : (
+                      pendingBudgets.map(order => (
+                          <div key={order.id} onClick={() => onNavigate('orders')} className="p-3 bg-gray-50 rounded-lg border border-gray-100 hover:border-rose-200 hover:bg-rose-50 cursor-pointer transition-all group">
+                              <div className="flex justify-between items-start mb-1">
                                   <div>
-                                      <h4 className="font-bold text-gray-800">{order.customerName}</h4>
-                                      <p className="text-xs text-gray-500">{order.theme} • {order.partyType}</p>
+                                      <h4 className="font-bold text-gray-700 group-hover:text-rose-700">{order.customerName}</h4>
+                                      <p className="text-xs text-gray-500">Data Evento: {new Date(order.dueDate + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
                                   </div>
-                              </div>
-                              <div className="text-right">
-                                  <span className="block text-sm font-medium text-gray-700">{order.dueTime}</span>
-                                  <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                      order.status === OrderStatus.PENDENTE_100 ? 'bg-red-100 text-red-600' : 
-                                      order.status === OrderStatus.ORCAMENTO ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-600'
-                                  }`}>
-                                      {order.status}
+                                  <span className="text-sm font-bold text-gray-800 bg-white px-2 py-1 rounded border border-gray-200">
+                                      R$ {order.totalPrice.toFixed(2).replace('.', ',')}
                                   </span>
                               </div>
+                              <div className="flex justify-between items-end">
+                                  <p className="text-xs text-gray-500 italic truncate max-w-[200px]">{order.theme || 'Sem tema'}</p>
+                                  <p className="text-[10px] text-blue-500 font-medium hover:underline">Ver detalhes &rarr;</p>
+                              </div>
                           </div>
-                          {/* Item Summary */}
-                          <div className="text-xs text-gray-600 bg-white/50 p-2 rounded border border-gray-100">
-                              <span className="font-semibold text-rose-500">Itens: </span>
-                              {getOrderSummary(order).slice(0, 3).join(', ')} 
-                              {getOrderSummary(order).length > 3 ? '...' : ''}
+                      ))
+                  )}
+              </div>
+          </div>
+
+          {/* Upcoming Events */}
+          <div className="bg-white rounded-xl shadow-sm border border-rose-100 p-6">
+              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <Calendar size={20} className="text-rose-500"/>
+                  Próximas Entregas (Confirmadas)
+              </h3>
+              <div className="space-y-3">
+                  {nextEvents.length === 0 ? (
+                      <p className="text-gray-400 text-sm text-center py-8">Nenhuma entrega confirmada próxima.</p>
+                  ) : (
+                      nextEvents.map(order => (
+                          <div key={order.id} className="p-3 bg-gray-50 rounded-lg hover:bg-rose-50 transition-colors border border-transparent hover:border-rose-100">
+                              <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-3">
+                                      <div className="bg-white p-2 rounded border text-center min-w-[50px]">
+                                          <span className="block text-xs text-gray-500 uppercase">{new Date(order.dueDate + 'T00:00:00').toLocaleString('pt-BR', { month: 'short' })}</span>
+                                          <span className="block text-lg font-bold text-rose-600">{new Date(order.dueDate + 'T00:00:00').getDate()}</span>
+                                      </div>
+                                      <div>
+                                          <h4 className="font-bold text-gray-800">{order.customerName}</h4>
+                                          <p className="text-xs text-gray-500">{order.theme} • {order.partyType}</p>
+                                      </div>
+                                  </div>
+                                  <div className="text-right">
+                                      <span className="block text-sm font-medium text-gray-700">{order.dueTime}</span>
+                                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                          order.status === OrderStatus.PENDENTE_100 ? 'bg-red-100 text-red-600' : 
+                                          order.status === OrderStatus.PENDENTE_50 ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'
+                                      }`}>
+                                          {order.status}
+                                      </span>
+                                  </div>
+                              </div>
+                              {/* Item Summary */}
+                              <div className="text-xs text-gray-600 bg-white/50 p-2 rounded border border-gray-100">
+                                  <div className="font-semibold text-rose-500 mb-1">Itens:</div>
+                                  <div className="space-y-0.5">
+                                      {getOrderSummary(order).slice(0, 3).map((line, idx) => (
+                                          <div key={idx}>{line}</div>
+                                      ))}
+                                      {getOrderSummary(order).length > 3 && <div>...</div>}
+                                  </div>
+                              </div>
                           </div>
-                      </div>
-                  ))
-              )}
+                      ))
+                  )}
+              </div>
           </div>
       </div>
 
@@ -348,7 +409,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
                     {ordersWeekList.length === 0 ? (
                         <div className="text-center py-10 text-gray-400">
                             <Calendar size={48} className="mx-auto mb-3 opacity-20" />
-                            <p>Nenhuma entrega programada para esta semana.</p>
+                            <p>Nenhuma entrega confirmada programada para esta semana.</p>
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
@@ -398,7 +459,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
                     )}
                 </div>
                 <div className="p-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl text-right text-sm text-gray-500">
-                    Total de {ordersWeekCount} entregas nesta semana
+                    Total de {ordersWeekCount} entregas confirmadas nesta semana
                 </div>
             </div>
         </div>
