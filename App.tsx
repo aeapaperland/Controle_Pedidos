@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Dashboard from './views/Dashboard';
 import Orders from './views/Orders';
@@ -260,17 +259,57 @@ function App() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // App State
-  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
-  const [customers, setCustomers] = useState<Customer[]>(INITIAL_CUSTOMERS);
-  const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS);
-  const [inventory, setInventory] = useState<InventoryItem[]>(INITIAL_INVENTORY);
+  // App State with Persistence
+  const [orders, setOrders] = useState<Order[]>(() => {
+    const saved = localStorage.getItem('orders');
+    return saved ? JSON.parse(saved) : INITIAL_ORDERS;
+  });
+
+  const [products, setProducts] = useState<Product[]>(() => {
+    const saved = localStorage.getItem('products');
+    return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
+  });
+
+  const [customers, setCustomers] = useState<Customer[]>(() => {
+    const saved = localStorage.getItem('customers');
+    return saved ? JSON.parse(saved) : INITIAL_CUSTOMERS;
+  });
+
+  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+    const saved = localStorage.getItem('transactions');
+    return saved ? JSON.parse(saved) : INITIAL_TRANSACTIONS;
+  });
+
+  const [inventory, setInventory] = useState<InventoryItem[]>(() => {
+    const saved = localStorage.getItem('inventory');
+    return saved ? JSON.parse(saved) : INITIAL_INVENTORY;
+  });
   
   // Logo State (Persisted)
   const [logo, setLogo] = useState<string>(() => {
     return localStorage.getItem('appLogo') || '';
   });
+
+  // Persistence Effects
+  useEffect(() => {
+    localStorage.setItem('orders', JSON.stringify(orders));
+  }, [orders]);
+
+  useEffect(() => {
+    localStorage.setItem('products', JSON.stringify(products));
+  }, [products]);
+
+  useEffect(() => {
+    localStorage.setItem('customers', JSON.stringify(customers));
+  }, [customers]);
+
+  useEffect(() => {
+    localStorage.setItem('transactions', JSON.stringify(transactions));
+  }, [transactions]);
+
+  useEffect(() => {
+    localStorage.setItem('inventory', JSON.stringify(inventory));
+  }, [inventory]);
 
   const menuItems = [
     { id: 'dashboard', label: 'Painel', icon: <LayoutDashboard size={20} /> },
