@@ -37,27 +37,25 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
   sunday.setDate(monday.getDate() + 6);
   sunday.setHours(23, 59, 59, 999);
 
-  const ordersWeekList = orders.filter(o => {
-    if (o.status === OrderStatus.ORCAMENTO) return false;
-    
-    const [y, m, d] = o.dueDate.split('-').map(Number);
-    const orderDate = new Date(y, m - 1, d);
-    orderDate.setHours(0, 0, 0, 0);
-    
-    return orderDate >= monday && orderDate <= sunday;
-  }).sort((a, b) => {
-     const dateA = new Date(a.dueDate + 'T' + (a.dueTime || '00:00')).getTime();
-     const dateB = new Date(b.dueDate + 'T' + (b.dueTime || '00:00')).getTime();
-     return dateA - dateB;
-  });
+  const ordersWeekList = useMemo(() => {
+      return orders.filter(o => {
+        const [y, m, d] = o.dueDate.split('-').map(Number);
+        const orderDate = new Date(y, m - 1, d);
+        orderDate.setHours(0, 0, 0, 0);
+        
+        return orderDate >= monday && orderDate <= sunday;
+      }).sort((a, b) => {
+         const dateA = new Date(a.dueDate + 'T' + (a.dueTime || '00:00')).getTime();
+         const dateB = new Date(b.dueDate + 'T' + (b.dueTime || '00:00')).getTime();
+         return dateA - dateB;
+      });
+  }, [orders, monday, sunday]);
 
   const ordersWeekCount = ordersWeekList.length;
 
   // Next Events (Upcoming orders)
-  // Fix: Allow ORCAMENTO to show up if user wants to see planned/quoted events as "Upcoming"
   const nextEvents = orders
     .filter(o => {
-        // Exclude only completed/delivered orders from "Upcoming" list to ensure user sees their active work
         if (o.status === OrderStatus.ENTREGUE || o.status === OrderStatus.FINALIZADO) return false;
         
         const [y, m, d] = o.dueDate.split('-').map(Number);
@@ -136,29 +134,31 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
     generateWeeklyReportPDF(ordersWeekList, monday, sunday, logo);
   };
 
-  const getMatrixCounts = (items: OrderItem[]) => {
-    const counts = {
-        donuts: 0, pirulitos: 0, cakepop: 0, cupcake: 0,
-        pdm_mini: 0, pdm_medio: 0, pdm_palito: 0,
-        especiais: 0, biscoitos: 0, lascas: 0
-    };
-    items.forEach(item => {
-        const n = item.name.toLowerCase();
-        const q = item.quantity;
-        if (n.includes('donut')) counts.donuts += q;
-        else if (n.includes('pirulito')) counts.pirulitos += q;
-        else if (n.includes('cake pop') || n.includes('cakepop')) counts.cakepop += q;
-        else if (n.includes('cupcake')) counts.cupcake += q;
-        else if (n.includes('pão de mel') || n.includes('pao de mel')) {
-            if (n.includes('mini')) counts.pdm_mini += q;
-            else if (n.includes('palito')) counts.pdm_palito += q;
-            else counts.pdm_medio += q;
-        }
-        else if (n.includes('3d') || n.includes('especial') || n.includes('especiais')) counts.especiais += q;
-        else if (n.includes('biscoito')) counts.biscoitos += q;
-        else if (n.includes('lasca')) counts.lascas += q;
-    });
-    return counts;
+  const getOrderSummary = (order: Order): string[] => {
+      const itemsMap = new Map<string, number>();
+      order.items.forEach(item => {
+           const normalized = item.name.replace(/^\(Incluso no Kit\) /, '').trim();
+           if(normalized !== 'Kit Promocional' && !normalized.startsWith('Kit Personalizado')) {
+               itemsMap.set(normalized, (itemsMap.get(normalized) || 0) + item.quantity);
+           }
+      });
+      
+      const summary: string[] = [];
+      itemsMap.forEach((qty, name) => {
+          summary.push(`${qty}x ${name}`);
+      });
+      return summary;
+  };
+
+  const getOrderNotes = (order: Order) => {
+      const kitItems = order.items.filter(i => i.details === 'Kit Promocional' || i.name.startsWith('Kit Personalizado'));
+      const kitNames = kitItems.map(k => k.name).join(', ');
+      
+      const parts = [];
+      if (kitNames) parts.push(`Contém: ${kitNames}`);
+      if (order.notes) parts.push(order.notes);
+      
+      return parts.join('. ');
   };
 
   const NavCard = ({ icon: Icon, title, subtitle, onClick, colorClass }: any) => (
@@ -287,25 +287,33 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
                   <p className="text-gray-400 text-sm">Nenhuma entrega próxima agendada.</p>
               ) : (
                   nextEvents.map(order => (
-                      <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-rose-50 transition-colors border border-transparent hover:border-rose-100">
-                          <div className="flex items-center gap-3">
-                              <div className="bg-white p-2 rounded border text-center min-w-[50px]">
-                                  <span className="block text-xs text-gray-500 uppercase">{new Date(order.dueDate + 'T00:00:00').toLocaleString('pt-BR', { month: 'short' })}</span>
-                                  <span className="block text-lg font-bold text-rose-600">{new Date(order.dueDate + 'T00:00:00').getDate()}</span>
+                      <div key={order.id} className="p-3 bg-gray-50 rounded-lg hover:bg-rose-50 transition-colors border border-transparent hover:border-rose-100">
+                          <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-3">
+                                  <div className="bg-white p-2 rounded border text-center min-w-[50px]">
+                                      <span className="block text-xs text-gray-500 uppercase">{new Date(order.dueDate + 'T00:00:00').toLocaleString('pt-BR', { month: 'short' })}</span>
+                                      <span className="block text-lg font-bold text-rose-600">{new Date(order.dueDate + 'T00:00:00').getDate()}</span>
+                                  </div>
+                                  <div>
+                                      <h4 className="font-bold text-gray-800">{order.customerName}</h4>
+                                      <p className="text-xs text-gray-500">{order.theme} • {order.partyType}</p>
+                                  </div>
                               </div>
-                              <div>
-                                  <h4 className="font-bold text-gray-800">{order.customerName}</h4>
-                                  <p className="text-xs text-gray-500">{order.theme} • {order.partyType}</p>
+                              <div className="text-right">
+                                  <span className="block text-sm font-medium text-gray-700">{order.dueTime}</span>
+                                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                      order.status === OrderStatus.PENDENTE_100 ? 'bg-red-100 text-red-600' : 
+                                      order.status === OrderStatus.ORCAMENTO ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-600'
+                                  }`}>
+                                      {order.status}
+                                  </span>
                               </div>
                           </div>
-                          <div className="text-right">
-                              <span className="block text-sm font-medium text-gray-700">{order.dueTime}</span>
-                              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                  order.status === OrderStatus.PENDENTE_100 ? 'bg-red-100 text-red-600' : 
-                                  order.status === OrderStatus.ORCAMENTO ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-600'
-                              }`}>
-                                  {order.status}
-                              </span>
+                          {/* Item Summary */}
+                          <div className="text-xs text-gray-600 bg-white/50 p-2 rounded border border-gray-100">
+                              <span className="font-semibold text-rose-500">Itens: </span>
+                              {getOrderSummary(order).slice(0, 3).join(', ')} 
+                              {getOrderSummary(order).length > 3 ? '...' : ''}
                           </div>
                       </div>
                   ))
@@ -313,7 +321,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
           </div>
       </div>
 
-      {/* Modal for Weekly Orders (Matrix View) */}
+      {/* Modal for Weekly Orders (Optimized List View) */}
       {isWeekModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[95vw] max-h-[90vh] flex flex-col">
@@ -347,46 +355,39 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
                             <table className="w-full text-left border-collapse border border-gray-200 text-xs sm:text-sm">
                                 <thead className="bg-sky-400 text-white">
                                     <tr>
-                                        <th className="p-2 border border-sky-500/30 font-semibold min-w-[150px]">Temas</th>
-                                        <th className="p-2 border border-sky-500/30 font-semibold text-center">Data Entrega</th>
-                                        <th className="p-2 border border-sky-500/30 font-semibold text-center">Donuts</th>
-                                        <th className="p-2 border border-sky-500/30 font-semibold text-center">Pirulitos</th>
-                                        <th className="p-2 border border-sky-500/30 font-semibold text-center">CakePop</th>
-                                        <th className="p-2 border border-sky-500/30 font-semibold text-center">CupCake</th>
-                                        <th className="p-2 border border-sky-500/30 font-semibold text-center">Pão de Mel<br/>(mini)</th>
-                                        <th className="p-2 border border-sky-500/30 font-semibold text-center">Pão de Mel<br/>(médio)</th>
-                                        <th className="p-2 border border-sky-500/30 font-semibold text-center">Pão de Mel<br/>(palito)</th>
-                                        <th className="p-2 border border-sky-500/30 font-semibold text-center">Mod.<br/>Especiais (3D)</th>
-                                        <th className="p-2 border border-sky-500/30 font-semibold text-center">Biscoitos</th>
-                                        <th className="p-2 border border-sky-500/30 font-semibold text-center">Lascas</th>
-                                        <th className="p-2 border border-sky-500/30 font-semibold text-center min-w-[150px]">Obs.:</th>
+                                        <th className="p-2 border border-sky-500/30 font-semibold text-center w-[120px]">Data / Hora</th>
+                                        <th className="p-2 border border-sky-500/30 font-semibold w-[200px]">Cliente / Tema</th>
+                                        <th className="p-2 border border-sky-500/30 font-semibold">Itens do Pedido</th>
+                                        <th className="p-2 border border-sky-500/30 font-semibold text-center w-[200px]">Obs.:</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
                                     {ordersWeekList.map((order, idx) => {
-                                        const counts = getMatrixCounts(order.items);
                                         const rowClass = idx % 2 === 0 ? 'bg-white' : 'bg-sky-50';
                                         return (
                                             <tr key={order.id} className={`${rowClass} hover:bg-sky-100 transition-colors`}>
-                                                <td className="p-2 border-r border-gray-200 align-middle">
-                                                    <div className="font-bold text-gray-800">{order.theme}</div>
-                                                    <div className="text-xs text-gray-500">{order.customerName}</div>
-                                                </td>
                                                 <td className="p-2 border-r border-gray-200 text-center align-middle">
-                                                    {new Date(order.dueDate + 'T00:00:00').toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}
+                                                    <div className="font-bold text-gray-800">
+                                                        {new Date(order.dueDate + 'T00:00:00').toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500">{order.dueTime}</div>
                                                 </td>
-                                                <td className="p-2 border-r border-gray-200 text-center align-middle">{counts.donuts || ''}</td>
-                                                <td className="p-2 border-r border-gray-200 text-center align-middle">{counts.pirulitos || ''}</td>
-                                                <td className="p-2 border-r border-gray-200 text-center align-middle">{counts.cakepop || ''}</td>
-                                                <td className="p-2 border-r border-gray-200 text-center align-middle">{counts.cupcake || ''}</td>
-                                                <td className="p-2 border-r border-gray-200 text-center align-middle">{counts.pdm_mini || ''}</td>
-                                                <td className="p-2 border-r border-gray-200 text-center align-middle">{counts.pdm_medio || ''}</td>
-                                                <td className="p-2 border-r border-gray-200 text-center align-middle">{counts.pdm_palito || ''}</td>
-                                                <td className="p-2 border-r border-gray-200 text-center align-middle">{counts.especiais || ''}</td>
-                                                <td className="p-2 border-r border-gray-200 text-center align-middle">{counts.biscoitos || ''}</td>
-                                                <td className="p-2 border-r border-gray-200 text-center align-middle">{counts.lascas || ''}</td>
-                                                <td className="p-2 border-r border-gray-200 align-middle text-xs text-gray-600 italic max-w-[200px]">
-                                                    {order.notes}
+                                                
+                                                <td className="p-2 border-r border-gray-200 align-middle">
+                                                    <div className="font-bold text-gray-800">{order.customerName}</div>
+                                                    <div className="text-xs text-gray-600">{order.theme}</div>
+                                                </td>
+
+                                                <td className="p-2 border-r border-gray-200 align-middle">
+                                                    <div className="text-xs sm:text-sm font-medium text-gray-700 leading-relaxed">
+                                                        {getOrderSummary(order).map((itemStr, i) => (
+                                                            <div key={i} className="mb-0.5">{itemStr}</div>
+                                                        ))}
+                                                    </div>
+                                                </td>
+
+                                                <td className="p-2 border-r border-gray-200 align-middle text-xs text-gray-600 italic">
+                                                    {getOrderNotes(order)}
                                                 </td>
                                             </tr>
                                         );
