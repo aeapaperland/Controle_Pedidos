@@ -3,7 +3,7 @@ import Dashboard from './views/Dashboard';
 import Orders from './views/Orders';
 import Catalog from './views/Catalog';
 import Financial from './views/Financial';
-import { Menu, X, LayoutDashboard, ShoppingBag, BookOpen, DollarSign, LogOut, Camera, Upload, Download, CloudUpload, Save, RefreshCw, Smartphone, Monitor } from 'lucide-react';
+import { Menu, X, LayoutDashboard, ShoppingBag, BookOpen, DollarSign, LogOut, Camera, Upload, Download, CloudUpload, Save, RefreshCw, Smartphone, Monitor, Share2 } from 'lucide-react';
 import { Order, Product, Customer, Transaction, OrderStatus, InventoryItem, ProductionStage } from './types';
 
 // Mock Data (Initial State)
@@ -387,8 +387,8 @@ function App() {
     }
   };
 
-  // Export Data (Backup)
-  const handleExportData = () => {
+  // Export Data (Backup) - Enhanced with Web Share API for Mobile
+  const handleExportData = async () => {
       const data = {
           orders,
           products,
@@ -398,11 +398,31 @@ function App() {
           logo,
           exportDate: new Date().toISOString()
       };
-      const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+      
+      const jsonString = JSON.stringify(data);
+      const fileName = `AEA_Delicias_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+      
+      // Try Native Share (Mobile/Supported Browsers)
+      try {
+          const file = new File([jsonString], fileName, { type: 'application/json' });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                  files: [file],
+                  title: 'Backup A&A Delícias',
+                  text: 'Arquivo de backup dos dados da confeitaria.'
+              });
+              return; // Success, exit function
+          }
+      } catch (err) {
+          console.log("Sharing failed or cancelled, falling back to download", err);
+      }
+
+      // Fallback: Direct Download (Desktop)
+      const blob = new Blob([jsonString], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `AEA_Delicias_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = fileName;
       a.click();
       URL.revokeObjectURL(url);
   };
@@ -491,7 +511,7 @@ function App() {
           <div className="flex justify-between h-16">
             {/* Logo Section (Clickable for Upload) */}
             <div className="flex-shrink-0 flex items-center">
-               <label className="cursor-pointer relative group flex items-center gap-2" title="Alterar Logo">
+               <label className="cursor-pointer relative group flex items-center gap-2" title="Clique para alterar a logo">
                   <input 
                     type="file" 
                     accept="image/*" 
@@ -533,7 +553,7 @@ function App() {
               
               <div className="h-6 w-px bg-gray-200 mx-2"></div>
               
-              {/* Sync Button (New) */}
+              {/* Sync Button (Desktop) */}
               <button 
                 onClick={() => setIsSyncModalOpen(true)}
                 className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors"
@@ -644,17 +664,17 @@ function App() {
                             <div className="flex justify-center mb-3 text-rose-500">
                                 <Monitor size={32} />
                                 <span className="mx-2">→</span>
-                                <Download size={32} />
+                                <Share2 size={32} />
                             </div>
-                            <h3 className="font-bold text-gray-800 text-center mb-2">1. Baixar Dados</h3>
+                            <h3 className="font-bold text-gray-800 text-center mb-2">1. Salvar / Enviar</h3>
                             <p className="text-xs text-gray-500 text-center mb-4">
-                                Salva um arquivo no seu aparelho com tudo o que você cadastrou. Envie este arquivo para o outro dispositivo (WhatsApp/Email).
+                                Salva ou Compartilha (WhatsApp/Drive) um arquivo com todos os seus pedidos.
                             </p>
                             <button 
                                 onClick={handleExportData}
                                 className="w-full py-2 bg-rose-100 text-rose-700 rounded-lg font-bold hover:bg-rose-200 transition-colors flex items-center justify-center gap-2"
                             >
-                                <Download size={18} /> Baixar Backup
+                                <Share2 size={18} /> Baixar / Enviar
                             </button>
                         </div>
 
@@ -667,7 +687,7 @@ function App() {
                             </div>
                             <h3 className="font-bold text-gray-800 text-center mb-2">2. Carregar Dados</h3>
                             <p className="text-xs text-gray-500 text-center mb-4">
-                                No outro dispositivo, clique aqui para abrir o arquivo que você baixou. Isso atualizará o sistema.
+                                No outro dispositivo, clique aqui para abrir o arquivo que você baixou ou recebeu.
                             </p>
                             <label className="w-full py-2 bg-green-100 text-green-700 rounded-lg font-bold hover:bg-green-200 transition-colors flex items-center justify-center gap-2 cursor-pointer">
                                 <input type="file" accept=".json" className="hidden" onChange={handleImportData} />
