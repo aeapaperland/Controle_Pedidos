@@ -1,30 +1,20 @@
-
-import React, { useState, useMemo } from 'react';
-import { Order, OrderStatus, OrderItem } from '../types';
-import { Calendar, ClipboardList, BookOpen, DollarSign, Clock, Share2, X, Sparkles, MessageCircle, Gift } from 'lucide-react';
-import { generateWeeklyReportPDF } from '../services/pdfService';
-
-interface DashboardProps {
-  orders: Order[];
-  onNavigate: (view: string) => void;
-  logo?: string;
-}
-
-const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
+ Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
   const [isWeekModalOpen, setIsWeekModalOpen] = useState(false);
 
   // --- Calculations ---
-  const todayStr = new Date().toISOString().split('T')[0];
+  // Fix: Use local date for "today" to match input date pickers (YYYY-MM-DD)
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const todayStr = `${year}-${month}-${day}`;
   
-  // 1. Orders today
+  // 1. Orders today (Include all non-delivered active orders if necessary, but usually confirmed)
   const ordersToday = orders.filter(o => o.dueDate === todayStr && o.status !== OrderStatus.ORCAMENTO).length;
 
   // 2. Orders this week (Current Week: Monday to Sunday)
   const curr = new Date();
   const currentDay = curr.getDay(); // 0=Dom, 1=Seg, ..., 6=Sab
-  
-  // Calculate days to subtract to get to Monday
-  // If Sunday (0), go back 6 days. If Monday (1), go back 0 days.
   const daysToMonday = currentDay === 0 ? 6 : currentDay - 1;
   
   const monday = new Date(curr);
@@ -38,7 +28,6 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
   const ordersWeekList = orders.filter(o => {
     if (o.status === OrderStatus.ORCAMENTO) return false;
     
-    // Parse YYYY-MM-DD safely to local date object at midnight
     const [y, m, d] = o.dueDate.split('-').map(Number);
     const orderDate = new Date(y, m - 1, d);
     orderDate.setHours(0, 0, 0, 0);
@@ -52,10 +41,13 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
 
   const ordersWeekCount = ordersWeekList.length;
 
-  // Next Events (Upcoming confirmed orders)
+  // Next Events (Upcoming orders)
+  // Fix: Allow ORCAMENTO to show up if user wants to see planned/quoted events as "Upcoming"
   const nextEvents = orders
     .filter(o => {
-        if (o.status === OrderStatus.ORCAMENTO) return false;
+        // Exclude only completed/delivered orders from "Upcoming" list to ensure user sees their active work
+        if (o.status === OrderStatus.ENTREGUE || o.status === OrderStatus.FINALIZADO) return false;
+        
         const [y, m, d] = o.dueDate.split('-').map(Number);
         const orderDate = new Date(y, m - 1, d);
         const now = new Date();
@@ -70,17 +62,14 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
     .slice(0, 3);
 
   // --- CRM: Opportunities (Birthdays coming up) ---
-  // Regra: Lembrete aparece 11 meses após a festa anterior (ou seja, 1 mês antes do próximo aniversário)
   const opportunities = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
     const uniqueClients = new Map<string, Order>();
 
-    // Group by Customer + BirthdayPerson to avoid duplicates, keeping the latest order
     orders.forEach(order => {
        if (!order.birthdayPersonName) return;
-       // Key: name + birthday person
        const key = `${order.customerName.toLowerCase()}-${order.birthdayPersonName.toLowerCase()}`;
        const existing = uniqueClients.get(key);
        
@@ -96,42 +85,26 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
         const orderDate = new Date(y, m - 1, d); 
         orderDate.setHours(0,0,0,0);
         
-        // 1. Check if the party has actually passed
         if (orderDate >= today) return;
 
         const currentYear = today.getFullYear();
-        
-        // Determine next occurrence this year based on MM/DD
         let nextDate = new Date(currentYear, orderDate.getMonth(), orderDate.getDate());
         
-        // If date passed this year, next one is next year
         if (nextDate < today) {
             nextDate.setFullYear(currentYear + 1);
         }
 
-        // Logic: Reminder appears after 11 months from the party date.
-        // Effectively 1 month before nextDate.
         const reminderStart = new Date(nextDate);
         reminderStart.setMonth(nextDate.getMonth() - 1);
         reminderStart.setHours(0, 0, 0, 0);
-
-        // Example: Party 20/12/2024. Next bday 20/12/2025. Reminder 20/11/2025.
-        // If today is 20/11/2025: today >= reminderStart (True) -> Show
-        // If today is 19/11/2025: today >= reminderStart (False) -> Hide
         
         if (today >= reminderStart) {
             const diffTime = nextDate.getTime() - today.getTime();
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            
             const yearDiff = nextDate.getFullYear() - orderDate.getFullYear();
             const newAge = (order.birthdayPersonAge || 0) + yearDiff;
             
-            results.push({
-                order,
-                nextDate,
-                newAge,
-                daysUntil: diffDays
-            });
+            results.push({ order, nextDate, newAge, daysUntil: diffDays });
         }
     });
 
@@ -142,19 +115,15 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
       const firstName = op.order.customerName.split(' ')[0];
       const bdayName = op.order.birthdayPersonName;
       const dateStr = op.nextDate.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'});
-      
       const msg = `Olá ${firstName}! Tudo bem? 🎂\n\nO sistema da A&A Delícias me avisou que o aniversário de *${bdayName}* está chegando (dia ${dateStr}).\n\nAno passado foi um prazer participar! Vamos planejar os doces para os *${op.newAge} aninhos*? 🥳🍬\n\nEstou à disposição!`;
-      
       const whatsapp = op.order.customerWhatsapp.replace(/\D/g, '');
-      const url = `https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`;
-      window.open(url, '_blank');
+      window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   const handlePrintWeek = () => {
     generateWeeklyReportPDF(ordersWeekList, monday, sunday, logo);
   };
 
-  // Helper for Matrix Counts
   const getMatrixCounts = (items: OrderItem[]) => {
     const counts = {
         donuts: 0, pirulitos: 0, cakepop: 0, cupcake: 0,
@@ -180,8 +149,6 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
     return counts;
   };
 
-  // --- Components ---
-
   const NavCard = ({ icon: Icon, title, subtitle, onClick, colorClass }: any) => (
     <button 
       onClick={onClick}
@@ -194,14 +161,12 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
       <div className={`p-3 rounded-xl ${colorClass} bg-opacity-10 text-opacity-100 mb-2`}>
         <Icon size={24} className={colorClass.replace('bg-', 'text-')} />
       </div>
-      
       <div>
         <h3 className="text-xl font-bold text-gray-800 group-hover:text-rose-600 transition-colors">
           {title}
         </h3>
         <p className="text-gray-500 text-sm font-medium mt-1">{subtitle}</p>
       </div>
-
       <div className="absolute top-6 right-6 opacity-10 transform scale-150 group-hover:scale-125 transition-transform">
          <Icon size={64} />
       </div>
@@ -210,7 +175,6 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
 
   return (
     <div className="space-y-8 animate-fade-in max-w-6xl mx-auto">
-      
       <div className="flex justify-between items-center">
         <div>
             <h1 className="text-3xl font-bold text-gray-800 font-script">Olá, Adriana!</h1>
@@ -266,12 +230,10 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
             <div className="absolute top-0 right-0 p-4 opacity-10 text-amber-600">
                 <Gift size={100} />
             </div>
-            
             <h3 className="text-lg font-bold text-amber-800 mb-4 flex items-center gap-2 relative z-10">
                 <Sparkles className="text-amber-600" size={20} fill="currentColor" />
                 Oportunidades de Re-venda (Aniversários Próximos)
             </h3>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
                 {opportunities.map((op, idx) => (
                     <div key={idx} className="bg-white/80 backdrop-blur-sm p-4 rounded-lg border border-amber-200 flex justify-between items-center hover:shadow-md transition-shadow">
@@ -327,7 +289,8 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
                           <div className="text-right">
                               <span className="block text-sm font-medium text-gray-700">{order.dueTime}</span>
                               <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                  order.status === OrderStatus.PENDENTE_100 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                                  order.status === OrderStatus.PENDENTE_100 ? 'bg-red-100 text-red-600' : 
+                                  order.status === OrderStatus.ORCAMENTO ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-600'
                               }`}>
                                   {order.status}
                               </span>
@@ -361,7 +324,6 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
                         </button>
                     </div>
                 </div>
-                
                 <div className="flex-1 overflow-auto p-6">
                     {ordersWeekList.length === 0 ? (
                         <div className="text-center py-10 text-gray-400">
@@ -422,7 +384,6 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
                         </div>
                     )}
                 </div>
-                
                 <div className="p-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl text-right text-sm text-gray-500">
                     Total de {ordersWeekCount} entregas nesta semana
                 </div>
