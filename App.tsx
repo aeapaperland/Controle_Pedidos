@@ -3,7 +3,7 @@ import Dashboard from './views/Dashboard';
 import Orders from './views/Orders';
 import Catalog from './views/Catalog';
 import Financial from './views/Financial';
-import { Menu, X, LayoutDashboard, ShoppingBag, BookOpen, DollarSign, LogOut, Camera, Upload } from 'lucide-react';
+import { Menu, X, LayoutDashboard, ShoppingBag, BookOpen, DollarSign, LogOut, Camera, Upload, Download, CloudUpload, Save } from 'lucide-react';
 import { Order, Product, Customer, Transaction, OrderStatus, InventoryItem, ProductionStage } from './types';
 
 // Mock Data (Initial State)
@@ -255,6 +255,38 @@ const INITIAL_INVENTORY: InventoryItem[] = [
     { id: 'i3', name: 'Pasta Americana Branca', quantity: 800, unit: 'g', minStock: 500 },
 ];
 
+// Helper to resize images before saving to prevent LocalStorage Quota limits on mobile
+const resizeImage = (base64Str: string, maxWidth = 200, maxHeight = 200): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height *= maxWidth / width;
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width *= maxHeight / height;
+          height = maxHeight;
+        }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0, width, height);
+      // Compress to JPEG 0.8 quality to save space
+      resolve(canvas.toDataURL('image/jpeg', 0.8));
+    };
+    img.onerror = () => resolve(base64Str); // Fail safe
+  });
+};
+
 function App() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -290,26 +322,22 @@ function App() {
     return localStorage.getItem('appLogo') || '';
   });
 
+  // Safe Save function
+  const saveToStorage = (key: string, data: any) => {
+      try {
+          localStorage.setItem(key, JSON.stringify(data));
+      } catch (e) {
+          console.error(`Erro ao salvar ${key}:`, e);
+          alert("Atenção: Memória cheia! Tente apagar fotos antigas ou fazer backup dos dados.");
+      }
+  };
+
   // Persistence Effects
-  useEffect(() => {
-    localStorage.setItem('orders', JSON.stringify(orders));
-  }, [orders]);
-
-  useEffect(() => {
-    localStorage.setItem('products', JSON.stringify(products));
-  }, [products]);
-
-  useEffect(() => {
-    localStorage.setItem('customers', JSON.stringify(customers));
-  }, [customers]);
-
-  useEffect(() => {
-    localStorage.setItem('transactions', JSON.stringify(transactions));
-  }, [transactions]);
-
-  useEffect(() => {
-    localStorage.setItem('inventory', JSON.stringify(inventory));
-  }, [inventory]);
+  useEffect(() => { saveToStorage('orders', orders); }, [orders]);
+  useEffect(() => { saveToStorage('products', products); }, [products]);
+  useEffect(() => { saveToStorage('customers', customers); }, [customers]);
+  useEffect(() => { saveToStorage('transactions', transactions); }, [transactions]);
+  useEffect(() => { saveToStorage('inventory', inventory); }, [inventory]);
 
   const menuItems = [
     { id: 'dashboard', label: 'Painel', icon: <LayoutDashboard size={20} /> },
@@ -337,18 +365,77 @@ function App() {
     setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
   };
 
-  // Handle Logo Upload
+  // Handle Logo Upload with Compression
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64 = reader.result as string;
-        setLogo(base64);
-        localStorage.setItem('appLogo', base64);
+        // Resize before saving to avoid storage limits
+        resizeImage(base64).then(resized => {
+            setLogo(resized);
+            try {
+                localStorage.setItem('appLogo', resized);
+            } catch (e) {
+                alert("Imagem muito grande mesmo após compressão. Tente outra.");
+            }
+        });
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  // Export Data (Backup)
+  const handleExportData = () => {
+      const data = {
+          orders,
+          products,
+          customers,
+          transactions,
+          inventory,
+          logo,
+          exportDate: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup_confeitaria_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+  };
+
+  // Import Data (Restore)
+  const handleImportData = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      
+      if (!window.confirm("Isso substituirá todos os dados atuais pelos dados do backup. Deseja continuar?")) {
+          e.target.value = ''; // Reset input
+          return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+          try {
+              const json = JSON.parse(event.target?.result as string);
+              if (json.orders) setOrders(json.orders);
+              if (json.products) setProducts(json.products);
+              if (json.customers) setCustomers(json.customers);
+              if (json.transactions) setTransactions(json.transactions);
+              if (json.inventory) setInventory(json.inventory);
+              if (json.logo) {
+                  setLogo(json.logo);
+                  localStorage.setItem('appLogo', json.logo);
+              }
+              alert("Dados restaurados com sucesso!");
+              window.location.reload(); // Reload to refresh all states properly
+          } catch (err) {
+              alert("Erro ao ler arquivo de backup. Verifique se é um arquivo válido.");
+          }
+      };
+      reader.readAsText(file);
   };
 
   const renderView = () => {
@@ -422,12 +509,11 @@ function App() {
                        <Upload size={20} />
                     </div>
                   )}
-                  {/* Text Removed as requested */}
                </label>
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-8 items-center">
+            <nav className="hidden md:flex space-x-4 items-center">
               {menuItems.map((item) => (
                 <button
                   key={item.id}
@@ -443,7 +529,22 @@ function App() {
                   {item.label}
                 </button>
               ))}
+              
               <div className="h-6 w-px bg-gray-200 mx-2"></div>
+              
+              {/* Backup Controls (Desktop) */}
+              <div className="flex items-center gap-2">
+                  <button onClick={handleExportData} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors" title="Fazer Backup (Download)">
+                      <Download size={18} />
+                  </button>
+                  <label className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-full transition-colors cursor-pointer" title="Restaurar Backup">
+                      <input type="file" accept=".json" className="hidden" onChange={handleImportData} />
+                      <CloudUpload size={18} />
+                  </label>
+              </div>
+
+              <div className="h-6 w-px bg-gray-200 mx-2"></div>
+              
               <button className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors">
                 <LogOut size={18} />
                 Sair
@@ -481,6 +582,23 @@ function App() {
                   {item.label}
                 </button>
               ))}
+              
+              <div className="border-t border-gray-100 my-2 pt-2 px-3">
+                 <p className="text-xs text-gray-400 font-bold mb-2 uppercase">Dados & Backup</p>
+                 <div className="flex gap-2">
+                     <button 
+                        onClick={handleExportData}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium"
+                     >
+                        <Download size={16} /> Baixar Dados
+                     </button>
+                     <label className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-50 text-green-600 rounded-lg text-sm font-medium cursor-pointer">
+                        <input type="file" accept=".json" className="hidden" onChange={handleImportData} />
+                        <CloudUpload size={16} /> Restaurar
+                     </label>
+                 </div>
+              </div>
+
               <div className="border-t border-gray-100 my-2 pt-2">
                  <button className="w-full flex items-center gap-3 px-3 py-4 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg">
                     <LogOut size={20} />
