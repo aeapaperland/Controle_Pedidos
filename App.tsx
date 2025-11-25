@@ -5,8 +5,11 @@ import Catalog from './views/Catalog';
 import Financial from './views/Financial';
 import Inventory from './views/Inventory';
 import Production from './views/Production';
-import { Menu, X, LayoutDashboard, ShoppingBag, BookOpen, DollarSign, LogOut, Camera, Upload, Download, CloudUpload, Save, RefreshCw, Smartphone, Monitor, Share2, Package, CalendarCheck, Cloud, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Menu, X, LayoutDashboard, ShoppingBag, BookOpen, DollarSign, LogOut, Camera, Upload, Download, CloudUpload, Save, RefreshCw, Smartphone, Monitor, Share2, Package, CalendarCheck, Cloud, AlertTriangle, CheckCircle, ArrowUpCircle, ArrowDownCircle, ExternalLink } from 'lucide-react';
 import { Order, Product, Customer, Transaction, OrderStatus, InventoryItem, ProductionStage } from './types';
+
+// Link da Pasta do Google Drive do Usuário
+const DRIVE_LINK = "https://drive.google.com/drive/folders/1tTMjyhrKogO3n5jmER9FgEpoaYbuWGoI";
 
 // Mock Data (Initial State)
 const INITIAL_ORDERS: Order[] = [];
@@ -425,7 +428,7 @@ function App() {
               await navigator.share({
                   files: [file],
                   title: 'Sincronização A&A Delícias',
-                  text: 'Arquivo de dados para sincronização.'
+                  text: 'Arquivo de dados para salvar no Drive.'
               });
               return; // Success, exit function
           }
@@ -690,7 +693,7 @@ function App() {
                         <Cloud size={28} /> Sincronização Nuvem
                     </h2>
                     <p className="text-blue-100 text-sm mt-2">
-                        Conecte seus dispositivos via Google Drive
+                        Google Drive da A&A Delícias
                     </p>
                     <button 
                         onClick={() => setIsSyncModalOpen(false)}
@@ -704,10 +707,8 @@ function App() {
                     <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-100 text-sm text-yellow-800 flex gap-2 items-start">
                         <AlertTriangle size={20} className="shrink-0 mt-0.5" />
                         <div>
-                            <p className="mb-1 font-bold">Como funciona:</p>
-                            1. Faça alterações em um aparelho (Ex: PC).<br/>
-                            2. Clique em <strong>"Salvar no Drive"</strong>.<br/>
-                            3. No outro aparelho (Ex: Celular), clique em <strong>"Abrir do Drive"</strong> para atualizar.
+                            <p className="mb-1 font-bold">Passo a Passo:</p>
+                            Para enviar ou receber dados, use os botões abaixo e salve/abra o arquivo na sua pasta do Drive.
                         </div>
                     </div>
 
@@ -715,32 +716,46 @@ function App() {
                         Última atualização: <span className="font-bold text-gray-600">{lastSyncTime}</span>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4">
+                    <div className="grid grid-cols-1 gap-3">
                         {/* EXPORT SECTION */}
-                        <button 
-                            onClick={handleExportData}
-                            className="w-full py-4 bg-blue-50 border-2 border-blue-100 text-blue-700 rounded-xl font-bold hover:bg-blue-100 hover:border-blue-300 transition-all flex items-center justify-center gap-3 group"
-                        >
-                            <div className="bg-white p-2 rounded-full text-blue-600 shadow-sm group-hover:scale-110 transition-transform">
-                                <Upload size={24} />
+                        <div className="border border-blue-100 rounded-xl p-3 bg-blue-50/30">
+                            <p className="text-xs text-blue-600 font-bold mb-2 uppercase text-center">Enviar para o Drive</p>
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={handleExportData}
+                                    className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 text-sm"
+                                >
+                                    <Upload size={18} /> 1. Gerar Arquivo
+                                </button>
+                                <a 
+                                    href={DRIVE_LINK} 
+                                    target="_blank" 
+                                    rel="noreferrer"
+                                    className="flex-1 py-3 bg-white border border-blue-200 text-blue-700 rounded-lg font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2 text-sm"
+                                >
+                                    <ExternalLink size={18} /> 2. Abrir Pasta
+                                </a>
                             </div>
-                            <div className="text-left">
-                                <span className="block text-lg">Salvar no Drive</span>
-                                <span className="block text-xs font-normal opacity-70">Envia os dados atuais para a nuvem</span>
-                            </div>
-                        </button>
+                        </div>
 
                         {/* IMPORT SECTION */}
-                        <label className="w-full py-4 bg-green-50 border-2 border-green-100 text-green-700 rounded-xl font-bold hover:bg-green-100 hover:border-green-300 transition-all flex items-center justify-center gap-3 cursor-pointer group">
-                            <input type="file" accept=".json" className="hidden" onChange={handleImportData} />
-                            <div className="bg-white p-2 rounded-full text-green-600 shadow-sm group-hover:scale-110 transition-transform">
-                                <Download size={24} />
+                        <div className="border border-green-100 rounded-xl p-3 bg-green-50/30">
+                            <p className="text-xs text-green-600 font-bold mb-2 uppercase text-center">Receber do Drive</p>
+                            <div className="flex gap-2 flex-col-reverse">
+                                <label className="w-full py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer">
+                                    <input type="file" accept=".json" className="hidden" onChange={handleImportData} />
+                                    <Download size={18} /> 2. Selecionar Arquivo Baixado
+                                </label>
+                                <a 
+                                    href={DRIVE_LINK} 
+                                    target="_blank" 
+                                    rel="noreferrer"
+                                    className="w-full py-3 bg-white border border-green-200 text-green-700 rounded-lg font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2 text-sm"
+                                >
+                                    <ExternalLink size={18} /> 1. Baixar da Pasta
+                                </a>
                             </div>
-                            <div className="text-left">
-                                <span className="block text-lg">Abrir do Drive</span>
-                                <span className="block text-xs font-normal opacity-70">Atualiza este aparelho com o arquivo</span>
-                            </div>
-                        </label>
+                        </div>
                     </div>
                 </div>
                 <div className="p-4 bg-gray-50 text-center border-t border-gray-100">
