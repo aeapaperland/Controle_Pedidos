@@ -1,4 +1,16 @@
- Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
+
+import React, { useState, useMemo } from 'react';
+import { Order, OrderStatus, OrderItem } from '../types';
+import { Calendar, ClipboardList, BookOpen, DollarSign, Clock, Share2, X, Sparkles, MessageCircle, Gift } from 'lucide-react';
+import { generateWeeklyReportPDF } from '../services/pdfService';
+
+interface DashboardProps {
+  orders: Order[];
+  onNavigate: (view: string) => void;
+  logo?: string;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
   const [isWeekModalOpen, setIsWeekModalOpen] = useState(false);
 
   // --- Calculations ---
