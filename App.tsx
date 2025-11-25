@@ -3,7 +3,7 @@ import Dashboard from './views/Dashboard';
 import Orders from './views/Orders';
 import Catalog from './views/Catalog';
 import Financial from './views/Financial';
-import { Menu, X, LayoutDashboard, ShoppingBag, BookOpen, DollarSign, LogOut, Camera, Upload, Download, CloudUpload, Save } from 'lucide-react';
+import { Menu, X, LayoutDashboard, ShoppingBag, BookOpen, DollarSign, LogOut, Camera, Upload, Download, CloudUpload, Save, RefreshCw, Smartphone, Monitor } from 'lucide-react';
 import { Order, Product, Customer, Transaction, OrderStatus, InventoryItem, ProductionStage } from './types';
 
 // Mock Data (Initial State)
@@ -290,6 +290,7 @@ const resizeImage = (base64Str: string, maxWidth = 200, maxHeight = 200): Promis
 function App() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   
   // App State with Persistence
   const [orders, setOrders] = useState<Order[]>(() => {
@@ -401,7 +402,7 @@ function App() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `backup_confeitaria_${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `AEA_Delicias_Backup_${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
   };
@@ -411,8 +412,8 @@ function App() {
       const file = e.target.files?.[0];
       if (!file) return;
       
-      if (!window.confirm("Isso substituirá todos os dados atuais pelos dados do backup. Deseja continuar?")) {
-          e.target.value = ''; // Reset input
+      if (!window.confirm("ATENÇÃO: Isso substituirá os dados atuais deste aparelho pelos dados do arquivo. Continuar?")) {
+          e.target.value = ''; 
           return;
       }
 
@@ -429,8 +430,8 @@ function App() {
                   setLogo(json.logo);
                   localStorage.setItem('appLogo', json.logo);
               }
-              alert("Dados restaurados com sucesso!");
-              window.location.reload(); // Reload to refresh all states properly
+              alert("Dados restaurados com sucesso! A página será recarregada.");
+              window.location.reload();
           } catch (err) {
               alert("Erro ao ler arquivo de backup. Verifique se é um arquivo válido.");
           }
@@ -490,7 +491,7 @@ function App() {
           <div className="flex justify-between h-16">
             {/* Logo Section (Clickable for Upload) */}
             <div className="flex-shrink-0 flex items-center">
-               <label className="cursor-pointer relative group flex items-center gap-2" title="Clique para alterar a logo">
+               <label className="cursor-pointer relative group flex items-center gap-2" title="Alterar Logo">
                   <input 
                     type="file" 
                     accept="image/*" 
@@ -532,16 +533,15 @@ function App() {
               
               <div className="h-6 w-px bg-gray-200 mx-2"></div>
               
-              {/* Backup Controls (Desktop) */}
-              <div className="flex items-center gap-2">
-                  <button onClick={handleExportData} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors" title="Fazer Backup (Download)">
-                      <Download size={18} />
-                  </button>
-                  <label className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-full transition-colors cursor-pointer" title="Restaurar Backup">
-                      <input type="file" accept=".json" className="hidden" onChange={handleImportData} />
-                      <CloudUpload size={18} />
-                  </label>
-              </div>
+              {/* Sync Button (New) */}
+              <button 
+                onClick={() => setIsSyncModalOpen(true)}
+                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors"
+                title="Sincronizar com outro dispositivo"
+              >
+                  <RefreshCw size={18} />
+                  Sincronizar
+              </button>
 
               <div className="h-6 w-px bg-gray-200 mx-2"></div>
               
@@ -584,19 +584,12 @@ function App() {
               ))}
               
               <div className="border-t border-gray-100 my-2 pt-2 px-3">
-                 <p className="text-xs text-gray-400 font-bold mb-2 uppercase">Dados & Backup</p>
-                 <div className="flex gap-2">
-                     <button 
-                        onClick={handleExportData}
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium"
-                     >
-                        <Download size={16} /> Baixar Dados
-                     </button>
-                     <label className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-50 text-green-600 rounded-lg text-sm font-medium cursor-pointer">
-                        <input type="file" accept=".json" className="hidden" onChange={handleImportData} />
-                        <CloudUpload size={16} /> Restaurar
-                     </label>
-                 </div>
+                 <button 
+                    onClick={() => { setIsSyncModalOpen(true); setIsMobileMenuOpen(false); }}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-3 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold"
+                 >
+                    <RefreshCw size={18} /> Sincronizar / Backup
+                 </button>
               </div>
 
               <div className="border-t border-gray-100 my-2 pt-2">
@@ -618,6 +611,79 @@ function App() {
           </div>
         </div>
       </main>
+
+      {/* SYNC / BACKUP MODAL */}
+      {isSyncModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+                <div className="bg-rose-600 p-6 text-white text-center relative">
+                    <h2 className="text-2xl font-bold flex items-center justify-center gap-2">
+                        <RefreshCw size={28} /> Sincronização
+                    </h2>
+                    <p className="text-rose-100 text-sm mt-2">
+                        Como transferir dados entre Computador e Celular
+                    </p>
+                    <button 
+                        onClick={() => setIsSyncModalOpen(false)}
+                        className="absolute top-4 right-4 text-white/70 hover:text-white"
+                    >
+                        <X size={24} />
+                    </button>
+                </div>
+                
+                <div className="p-6 space-y-6">
+                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm text-blue-800">
+                        <p className="mb-2 font-bold">⚠️ Importante:</p>
+                        Este sistema não usa nuvem (para ser gratuito). Os dados ficam salvos apenas no dispositivo atual.
+                        Para passar dados de um lugar para outro, use os botões abaixo:
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* EXPORT SECTION */}
+                        <div className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                            <div className="flex justify-center mb-3 text-rose-500">
+                                <Monitor size={32} />
+                                <span className="mx-2">→</span>
+                                <Download size={32} />
+                            </div>
+                            <h3 className="font-bold text-gray-800 text-center mb-2">1. Baixar Dados</h3>
+                            <p className="text-xs text-gray-500 text-center mb-4">
+                                Salva um arquivo no seu aparelho com tudo o que você cadastrou. Envie este arquivo para o outro dispositivo (WhatsApp/Email).
+                            </p>
+                            <button 
+                                onClick={handleExportData}
+                                className="w-full py-2 bg-rose-100 text-rose-700 rounded-lg font-bold hover:bg-rose-200 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <Download size={18} /> Baixar Backup
+                            </button>
+                        </div>
+
+                        {/* IMPORT SECTION */}
+                        <div className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                            <div className="flex justify-center mb-3 text-green-600">
+                                <Smartphone size={32} />
+                                <span className="mx-2">←</span>
+                                <CloudUpload size={32} />
+                            </div>
+                            <h3 className="font-bold text-gray-800 text-center mb-2">2. Carregar Dados</h3>
+                            <p className="text-xs text-gray-500 text-center mb-4">
+                                No outro dispositivo, clique aqui para abrir o arquivo que você baixou. Isso atualizará o sistema.
+                            </p>
+                            <label className="w-full py-2 bg-green-100 text-green-700 rounded-lg font-bold hover:bg-green-200 transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                                <input type="file" accept=".json" className="hidden" onChange={handleImportData} />
+                                <CloudUpload size={18} /> Restaurar Backup
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div className="p-4 bg-gray-50 text-center border-t border-gray-100">
+                    <button onClick={() => setIsSyncModalOpen(false)} className="text-gray-500 text-sm hover:underline">
+                        Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
 
     </div>
   );
