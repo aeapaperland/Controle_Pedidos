@@ -37,31 +37,7 @@ const INITIAL_PRODUCTS: Product[] = [
     description: 'Pirulito de chocolate decorado.'
   },
 
-  // 3. Mini Donuts na Caixinha (Subcampos solicitados)
-  { 
-    id: 'prod_box_2', 
-    name: 'Mini Donuts na Caixinha (com 2 donuts)', 
-    basePrice: 18.50, 
-    costPrice: 6.00, 
-    category: 'Kit', 
-    imageUrl: '', 
-    measureUnit: 'un', 
-    productionTimeMinutes: 30,
-    description: 'Caixinha para presente contendo 2 mini donuts decorados.'
-  },
-  { 
-    id: 'prod_box_9', 
-    name: 'Mini Donuts na Caixinha (com 9 donuts)', 
-    basePrice: 54.00, 
-    costPrice: 15.00, 
-    category: 'Kit', 
-    imageUrl: '', 
-    measureUnit: 'un', 
-    productionTimeMinutes: 60,
-    description: 'Caixa grande contendo 9 mini donuts decorados.'
-  },
-
-  // 4. Clássicos e Doces Finos
+  // 3. Cake Pop
   { 
     id: 'prod_cakepop', 
     name: 'Cake Pop', 
@@ -73,6 +49,8 @@ const INITIAL_PRODUCTS: Product[] = [
     productionTimeMinutes: 30,
     description: 'Bolo no palito banhado em chocolate e decorado.'
   },
+
+  // 4. CupCake
   { 
     id: 'prod_cupcake', 
     name: 'CupCake', 
@@ -84,6 +62,47 @@ const INITIAL_PRODUCTS: Product[] = [
     productionTimeMinutes: 40,
     description: 'Cupcake massa fofinha com cobertura decorada.'
   },
+
+  // 5. Pão de Mel (mini)
+  { 
+    id: 'prod_pdm_mini', 
+    name: 'Pão de Mel (mini)', 
+    basePrice: 19.50, 
+    costPrice: 5.00, 
+    category: 'Pão de Mel', 
+    imageUrl: '', 
+    measureUnit: 'un', 
+    productionTimeMinutes: 25,
+    description: 'Versão mini delicada recheada.'
+  },
+
+  // 6. Pão de Mel (médio)
+  { 
+    id: 'prod_pdm_med', 
+    name: 'Pão de Mel (médio)', 
+    basePrice: 22.00, 
+    costPrice: 6.00, 
+    category: 'Pão de Mel', 
+    imageUrl: '', 
+    measureUnit: 'un', 
+    productionTimeMinutes: 30,
+    description: 'Tamanho tradicional, ideal para lembrancinha.'
+  },
+
+  // 7. Pão de Mel no Palito
+  { 
+    id: 'prod_pdm_palito', 
+    name: 'Pão de Mel no Palito', 
+    basePrice: 25.00, 
+    costPrice: 7.00, 
+    category: 'Pão de Mel', 
+    imageUrl: '', 
+    measureUnit: 'un', 
+    productionTimeMinutes: 35,
+    description: 'Decorado no palito, excelente para compor a mesa.'
+  },
+
+  // 8. PopsCicle
   { 
     id: 'prod_popscicle', 
     name: 'PopsCicle', 
@@ -95,6 +114,8 @@ const INITIAL_PRODUCTS: Product[] = [
     productionTimeMinutes: 40,
     description: 'Picolé de bolo trufado (estilo Magnum) decorado no tema.'
   },
+
+  // 9. Trufas
   { 
     id: 'prod_trufa', 
     name: 'Trufas', 
@@ -106,6 +127,8 @@ const INITIAL_PRODUCTS: Product[] = [
     productionTimeMinutes: 25,
     description: 'Trufa de chocolate nobre recheada e decorada.'
   },
+
+  // 10. Lascas de Chocolate Decoradas
   { 
     id: 'prod_lascas', 
     name: 'Lascas de Chocolate Decoradas', 
@@ -117,19 +140,8 @@ const INITIAL_PRODUCTS: Product[] = [
     productionTimeMinutes: 30,
     description: 'Pedaços rústicos de chocolate nobre com toppings e decorações.'
   },
-  { 
-    id: 'prod_3d', 
-    name: '3D Modelagens Especiais', 
-    basePrice: 35.00, 
-    costPrice: 10.00, 
-    category: 'Modelagem', 
-    imageUrl: '', 
-    measureUnit: 'un', 
-    productionTimeMinutes: 60,
-    description: 'Personagens ou itens complexos totalmente modelados à mão.'
-  },
 
-  // 5. Biscoitos Decorados (Subcampos solicitados)
+  // 11. Biscoitos Decorados
   { 
     id: 'prod_biscoito', 
     name: 'Biscoitos Decorados', 
@@ -141,6 +153,8 @@ const INITIAL_PRODUCTS: Product[] = [
     productionTimeMinutes: 45,
     description: 'Biscoito amanteigado decorado com glacê real (Unidade).'
   },
+
+  // 12. Biscoitos Decorados (Coleção com 6)
   { 
     id: 'prod_biscoito_6', 
     name: 'Biscoitos Decorados (Coleção com 6)', 
@@ -153,7 +167,20 @@ const INITIAL_PRODUCTS: Product[] = [
     description: 'Coleção temática especial contendo 6 biscoitos decorados.'
   },
 
-  // 6. Kits Personalizados (Subcampos solicitados - ATUALIZADOS)
+  // 13. 3D Modelagens Especiais
+  { 
+    id: 'prod_3d', 
+    name: '3D Modelagens Especiais', 
+    basePrice: 35.00, 
+    costPrice: 10.00, 
+    category: 'Modelagem', 
+    imageUrl: '', 
+    measureUnit: 'un', 
+    productionTimeMinutes: 60,
+    description: 'Personagens ou itens complexos totalmente modelados à mão.'
+  },
+
+  // 14. Kit Personalizado 1
   { 
     id: 'prod_kit_1', 
     name: 'Kit Personalizado 1', 
@@ -165,6 +192,8 @@ const INITIAL_PRODUCTS: Product[] = [
     productionTimeMinutes: 180,
     description: '10 Mini Donuts, 5 Cake Pops, 5 Pães de Mel (mini), 5 Pirulitos, 5 Cupcakes.'
   },
+
+  // 15. Kit Personalizado 2
   { 
     id: 'prod_kit_2', 
     name: 'Kit Personalizado 2', 
@@ -176,6 +205,8 @@ const INITIAL_PRODUCTS: Product[] = [
     productionTimeMinutes: 300,
     description: '20 Mini Donuts, 8 Cake Pops, 8 Pães de Mel (mini), 8 Pirulitos, 8 Cupcakes.'
   },
+
+  // 16. Kit Personalizado 3
   { 
     id: 'prod_kit_3', 
     name: 'Kit Personalizado 3', 
@@ -188,41 +219,31 @@ const INITIAL_PRODUCTS: Product[] = [
     description: '30 Mini Donuts, 10 Cake Pops, 10 Pães de Mel (mini), 10 Pirulitos, 10 Cupcakes.'
   },
 
-  // 7. Pão de Mel (Subcampos solicitados)
+  // 17. Mini Donuts na Caixinha (com 2 donuts)
   { 
-    id: 'prod_pdm_mini', 
-    name: 'Pão de Mel (mini)', 
-    basePrice: 19.50, 
-    costPrice: 5.00, 
-    category: 'Pão de Mel', 
-    imageUrl: '', 
-    measureUnit: 'un', 
-    productionTimeMinutes: 25,
-    description: 'Versão mini delicada recheada.'
-  },
-  { 
-    id: 'prod_pdm_med', 
-    name: 'Pão de Mel (médio)', 
-    basePrice: 22.00, 
+    id: 'prod_box_2', 
+    name: 'Mini Donuts na Caixinha (com 2 donuts)', 
+    basePrice: 18.50, 
     costPrice: 6.00, 
-    category: 'Pão de Mel', 
+    category: 'Kit', 
     imageUrl: '', 
     measureUnit: 'un', 
     productionTimeMinutes: 30,
-    description: 'Tamanho tradicional, ideal para lembrancinha.'
+    description: 'Caixinha para presente contendo 2 mini donuts decorados.'
   },
+
+  // 18. Mini Donuts na Caixinha (com 9 donuts)
   { 
-    id: 'prod_pdm_palito', 
-    name: 'Pão de Mel no Palito', 
-    basePrice: 25.00, 
-    costPrice: 7.00, 
-    category: 'Pão de Mel', 
+    id: 'prod_box_9', 
+    name: 'Mini Donuts na Caixinha (com 9 donuts)', 
+    basePrice: 54.00, 
+    costPrice: 15.00, 
+    category: 'Kit', 
     imageUrl: '', 
     measureUnit: 'un', 
-    productionTimeMinutes: 35,
-    description: 'Decorado no palito, excelente para compor a mesa.'
+    productionTimeMinutes: 60,
+    description: 'Caixa grande contendo 9 mini donuts decorados.'
   },
-  // Bolo Bombom REMOVIDO
 ];
 
 const INITIAL_CUSTOMERS: Customer[] = [];
