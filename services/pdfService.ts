@@ -213,84 +213,59 @@ export const generateWeeklyReportPDF = (orders: Order[], startDate: Date, endDat
   doc.setTextColor(100, 100, 100);
   doc.text(`Período: ${startStr} a ${endStr}`, 14, 22);
 
-  // Columns Definition based on requested Matrix
+  // --- FIXED COLUMNS (OPTIMIZED VIEW) ---
   const columns = [
-    "Temas",
-    "Data\nEntrega",
-    "Donuts",
-    "Pirulitos",
-    "CakePop",
-    "CupCake",
-    "Pão de Mel\n(mini)",
-    "Pão de Mel\n(médio)",
-    "Pão de Mel\n(palito)",
-    "Mod.\nEspeciais (3D)",
-    "Biscoitos",
-    "Lascas",
-    "Obs.:"
+    "Data / Hora",
+    "Cliente / Tema",
+    "Itens do Pedido (Resumo)",
+    "Obs."
   ];
 
-  // Sort by date
+  // Sort orders by date
   const sortedOrders = [...orders].sort((a, b) => {
      const dateA = new Date(a.dueDate + 'T' + (a.dueTime || '00:00')).getTime();
      const dateB = new Date(b.dueDate + 'T' + (b.dueTime || '00:00')).getTime();
      return dateA - dateB;
   });
 
-  // Process Data
+  // Process Rows
   const body = sortedOrders.map(order => {
-      // Initialize counts for this row
-      const counts: Record<string, number> = {
-          donuts: 0,
-          pirulitos: 0,
-          cakepop: 0,
-          cupcake: 0,
-          pdm_mini: 0,
-          pdm_medio: 0,
-          pdm_palito: 0,
-          especiais: 0,
-          biscoitos: 0,
-          lascas: 0
-      };
-
+      // Calculate quantities for this order (Aggregated)
+      const itemsMap = new Map<string, number>();
       order.items.forEach(item => {
-          const n = item.name.toLowerCase();
-          const q = item.quantity;
-
-          if (n.includes('donut')) counts.donuts += q;
-          else if (n.includes('pirulito')) counts.pirulitos += q;
-          else if (n.includes('cake pop') || n.includes('cakepop')) counts.cakepop += q;
-          else if (n.includes('cupcake')) counts.cupcake += q;
-          else if (n.includes('pão de mel') || n.includes('pao de mel')) {
-              if (n.includes('mini')) counts.pdm_mini += q;
-              else if (n.includes('palito')) counts.pdm_palito += q;
-              else counts.pdm_medio += q;
-          }
-          else if (n.includes('3d') || n.includes('especial') || n.includes('especiais')) counts.especiais += q;
-          else if (n.includes('biscoito')) counts.biscoitos += q;
-          else if (n.includes('lasca')) counts.lascas += q;
+           const normalized = item.name.replace(/^\(Incluso no Kit\) /, '').trim();
+           if(normalized !== 'Kit Promocional' && !normalized.startsWith('Kit Personalizado')) {
+               itemsMap.set(normalized, (itemsMap.get(normalized) || 0) + item.quantity);
+           }
       });
+      
+      const summaryArray: string[] = [];
+      itemsMap.forEach((qty, name) => {
+          summaryArray.push(`${qty}x ${name}`);
+      });
+      const summaryStr = summaryArray.join('\n'); // Join with newline for vertical list
 
       // Format Date (DD/MM)
       const dateObj = new Date(order.dueDate + 'T00:00:00');
       const dateStr = `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}`;
+      const dateTimeStr = `${dateStr} - ${order.dueTime || ''}`;
       
-      const themeCell = order.theme + (order.customerName ? `\n(${order.customerName})` : '');
+      const clientThemeStr = `${order.customerName}\n(${order.theme})`;
+
+      // Notes logic (include Kit info)
+      const kitItems = order.items.filter(i => i.details === 'Kit Promocional' || i.name.startsWith('Kit Personalizado'));
+      const kitNames = kitItems.map(k => k.name).join(', ');
+      
+      const parts = [];
+      if (kitNames) parts.push(`Contém: ${kitNames}`);
+      if (order.notes) parts.push(order.notes);
+      const notesCell = parts.join('. ');
 
       return [
-          themeCell,
-          dateStr,
-          counts.donuts || '',
-          counts.pirulitos || '',
-          counts.cakepop || '',
-          counts.cupcake || '',
-          counts.pdm_mini || '',
-          counts.pdm_medio || '',
-          counts.pdm_palito || '',
-          counts.especiais || '',
-          counts.biscoitos || '',
-          counts.lascas || '',
-          order.notes || ''
+          dateTimeStr,
+          clientThemeStr,
+          summaryStr,
+          notesCell
       ];
   });
 
@@ -302,25 +277,25 @@ export const generateWeeklyReportPDF = (orders: Order[], startDate: Date, endDat
     headStyles: {
       fillColor: [56, 189, 248], // Sky Blue
       textColor: [0, 0, 0], // Black
-      fontSize: 9,
+      fontSize: 10,
       halign: 'center',
       valign: 'middle',
       fontStyle: 'bold'
     },
     styles: {
-      fontSize: 8,
-      cellPadding: 2,
+      fontSize: 9,
+      cellPadding: 3,
       overflow: 'linebreak',
       valign: 'middle',
-      halign: 'center',
+      halign: 'left',
       lineColor: [200, 200, 200],
       lineWidth: 0.1
     },
     columnStyles: {
-        0: { cellWidth: 40, halign: 'left' }, // Temas wider and left aligned
-        1: { cellWidth: 18 }, // Date
-        // Obs column (index 12)
-        12: { cellWidth: 'auto', halign: 'left' }
+        0: { cellWidth: 30, halign: 'center' }, // Data
+        1: { cellWidth: 50 }, // Cliente
+        2: { cellWidth: 'auto' }, // Itens (Takes remaining space)
+        3: { cellWidth: 50 } // Obs
     },
     alternateRowStyles: {
         fillColor: [224, 242, 254] // Light blue alternating
