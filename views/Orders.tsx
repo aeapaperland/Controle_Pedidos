@@ -110,15 +110,14 @@ const Orders: React.FC<OrdersProps> = ({
     const product = products.find(p => p.id === selectedProductId);
     if (!product || itemQuantity <= 0) return;
 
-    let itemsToAdd: OrderItem[] = [];
-    const currentTimestamp = Date.now();
     const kitComposition = KITS_COMPOSITION[product.id];
+    
+    // List of potential items to add (without IDs initially)
+    let candidates: Omit<OrderItem, 'id'>[] = [];
 
-    // Se for um Kit com composição definida
     if (kitComposition) {
-        // 1. Adiciona o Item "Pai" (O Kit em si) com o preço cheio
-        itemsToAdd.push({
-            id: `${currentTimestamp}-kit`,
+        // 1. Kit Parent
+        candidates.push({
             productId: product.id,
             name: product.name,
             quantity: itemQuantity,
@@ -127,26 +126,23 @@ const Orders: React.FC<OrdersProps> = ({
             measureUnit: 'un'
         });
 
-        // 2. Adiciona os componentes individuais com preço R$ 0 (inclusos)
-        // Isso garante que apareçam na lista de produção e PDF
-        kitComposition.forEach((comp, idx) => {
+        // 2. Kit Components
+        kitComposition.forEach((comp) => {
             const compProduct = products.find(p => p.id === comp.id);
             if (compProduct) {
-                itemsToAdd.push({
-                    id: `${currentTimestamp}-comp-${idx}`,
+                candidates.push({
                     productId: compProduct.id,
                     name: `(Incluso no Kit) ${compProduct.name}`,
                     quantity: comp.qty * itemQuantity,
-                    unitPrice: 0, // Preço zero pois já está pago no Kit
+                    unitPrice: 0, 
                     details: `Item integrante do ${product.name}`,
                     measureUnit: compProduct.measureUnit
                 });
             }
         });
     } else {
-        // Item padrão (não é kit)
-        itemsToAdd.push({
-            id: currentTimestamp.toString(),
+        // Standard Item
+        candidates.push({
             productId: product.id,
             name: product.name,
             quantity: itemQuantity,
@@ -157,9 +153,30 @@ const Orders: React.FC<OrdersProps> = ({
     }
 
     const currentItems = [...(newOrder.items || [])];
-    
-    // Adiciona os novos itens à lista existente
-    itemsToAdd.forEach(item => currentItems.push(item));
+
+    // Process each candidate: Merge if exists, otherwise Add
+    candidates.forEach((candidate) => {
+        // Check for existing item with same Product ID, Price, and Details
+        const existingIndex = currentItems.findIndex(item => 
+            item.productId === candidate.productId &&
+            Math.abs(item.unitPrice - candidate.unitPrice) < 0.001 && // Float safety comparison
+            (item.details || '').trim() === (candidate.details || '').trim()
+        );
+
+        if (existingIndex >= 0) {
+            // Merge: Sum quantity
+            currentItems[existingIndex] = {
+                ...currentItems[existingIndex],
+                quantity: currentItems[existingIndex].quantity + candidate.quantity
+            };
+        } else {
+            // Add: Create new item with ID
+            currentItems.push({
+                ...candidate,
+                id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+            });
+        }
+    });
 
     const updatedTotal = calculateTotal(currentItems, newOrder.deliveryFee || 0, newOrder.discount || 0);
 
