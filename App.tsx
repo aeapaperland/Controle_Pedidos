@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Dashboard from './views/Dashboard';
 import Orders from './views/Orders';
 import Catalog from './views/Catalog';
 import Financial from './views/Financial';
 import Inventory from './views/Inventory';
 import Production from './views/Production';
-import { Menu, X, LayoutDashboard, ShoppingBag, BookOpen, DollarSign, LogOut, Camera, Upload, Download, CloudUpload, Save, RefreshCw, Smartphone, Monitor, Share2, Package, CalendarCheck, Cloud, AlertTriangle, CheckCircle, ArrowUpCircle, ArrowDownCircle, ExternalLink } from 'lucide-react';
+import { Menu, X, LayoutDashboard, ShoppingBag, BookOpen, DollarSign, LogOut, Camera, Upload, Download, CloudUpload, Save, RefreshCw, Smartphone, Monitor, Share2, Package, CalendarCheck, Cloud, AlertTriangle, CheckCircle, ArrowUpCircle, ArrowDownCircle, ExternalLink, CloudLightning } from 'lucide-react';
 import { Order, Product, Customer, Transaction, OrderStatus, InventoryItem, ProductionStage } from './types';
 
 // Link da Pasta do Google Drive do Usuário
@@ -297,7 +297,11 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>('Nunca');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
+  // State Refs to track changes
+  const isInitialMount = useRef(true);
+
   // App State with Persistence
   const [orders, setOrders] = useState<Order[]>(() => {
     const saved = localStorage.getItem('orders');
@@ -339,16 +343,38 @@ function App() {
       }
   };
 
-  // Persistence Effects
-  useEffect(() => { saveToStorage('orders', orders); }, [orders]);
-  useEffect(() => { saveToStorage('products', products); }, [products]);
-  useEffect(() => { saveToStorage('customers', customers); }, [customers]);
-  useEffect(() => { saveToStorage('transactions', transactions); }, [transactions]);
-  useEffect(() => { saveToStorage('inventory', inventory); }, [inventory]);
+  // Persistence Effects & Change Detection
+  useEffect(() => { 
+      saveToStorage('orders', orders);
+      if (!isInitialMount.current) setHasUnsavedChanges(true);
+  }, [orders]);
+
+  useEffect(() => { 
+      saveToStorage('products', products); 
+      if (!isInitialMount.current) setHasUnsavedChanges(true);
+  }, [products]);
+
+  useEffect(() => { 
+      saveToStorage('customers', customers); 
+      if (!isInitialMount.current) setHasUnsavedChanges(true);
+  }, [customers]);
+
+  useEffect(() => { 
+      saveToStorage('transactions', transactions); 
+      if (!isInitialMount.current) setHasUnsavedChanges(true);
+  }, [transactions]);
+
+  useEffect(() => { 
+      saveToStorage('inventory', inventory); 
+      if (!isInitialMount.current) setHasUnsavedChanges(true);
+  }, [inventory]);
   
   useEffect(() => {
       const savedTime = localStorage.getItem('lastSyncTime');
       if (savedTime) setLastSyncTime(savedTime);
+      
+      // Set initial mount to false after first render to enable change detection
+      isInitialMount.current = false;
   }, []);
 
   const menuItems = [
@@ -420,6 +446,7 @@ function App() {
       const formattedTime = new Date().toLocaleString('pt-BR');
       setLastSyncTime(formattedTime);
       localStorage.setItem('lastSyncTime', formattedTime);
+      setHasUnsavedChanges(false); // Reset change indicator
 
       // Try Native Share (Mobile/Supported Browsers)
       try {
@@ -480,6 +507,7 @@ function App() {
               const now = new Date().toLocaleString('pt-BR');
               setLastSyncTime(now);
               localStorage.setItem('lastSyncTime', now);
+              setHasUnsavedChanges(false);
 
               alert("Dados carregados com sucesso! O sistema está atualizado.");
               window.location.reload();
@@ -602,11 +630,13 @@ function App() {
               {/* Sync Button (Desktop) */}
               <button 
                 onClick={() => setIsSyncModalOpen(true)}
-                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors"
-                title={`Sincronizado: ${lastSyncTime}`}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    hasUnsavedChanges ? 'text-white bg-rose-500 hover:bg-rose-600 shadow-sm animate-pulse' : 'text-blue-600 hover:bg-blue-50'
+                }`}
+                title={`Última Sincronização: ${lastSyncTime}`}
               >
-                  {lastSyncTime !== 'Nunca' ? <CheckCircle size={18} className="text-green-500"/> : <RefreshCw size={18} />}
-                  <span className="hidden lg:inline">Sincronizar</span>
+                  {hasUnsavedChanges ? <CloudLightning size={18}/> : (lastSyncTime !== 'Nunca' ? <CheckCircle size={18}/> : <RefreshCw size={18} />)}
+                  <span className="hidden lg:inline">{hasUnsavedChanges ? 'Salvar na Nuvem' : 'Sincronizar'}</span>
               </button>
 
               <div className="h-6 w-px bg-gray-200 mx-1"></div>
@@ -621,9 +651,9 @@ function App() {
             <div className="flex items-center md:hidden gap-4">
               <button 
                 onClick={() => setIsSyncModalOpen(true)}
-                className="text-blue-600"
+                className={`${hasUnsavedChanges ? 'text-rose-500 animate-pulse' : 'text-blue-600'}`}
               >
-                  <Cloud size={24} />
+                  {hasUnsavedChanges ? <CloudLightning size={24} /> : <Cloud size={24} />}
               </button>
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -658,9 +688,11 @@ function App() {
               <div className="border-t border-gray-100 my-2 pt-2 px-3">
                  <button 
                     onClick={() => { setIsSyncModalOpen(true); setIsMobileMenuOpen(false); }}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-3 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold"
+                    className={`w-full flex items-center justify-center gap-2 px-3 py-3 rounded-lg text-sm font-bold ${
+                        hasUnsavedChanges ? 'bg-rose-500 text-white animate-pulse' : 'bg-blue-50 text-blue-600'
+                    }`}
                  >
-                    <RefreshCw size={18} /> Sincronizar / Google Drive
+                    <RefreshCw size={18} /> {hasUnsavedChanges ? 'Salvar Alterações Pendentes' : 'Sincronizar / Google Drive'}
                  </button>
               </div>
 
@@ -682,18 +714,30 @@ function App() {
              {renderView()}
           </div>
         </div>
+        
+        {/* FLOATING SAVE BUTTON (Mobile/Tablet) */}
+        {hasUnsavedChanges && (
+            <button 
+                onClick={() => setIsSyncModalOpen(true)}
+                className="md:hidden absolute bottom-6 right-6 bg-rose-600 text-white p-4 rounded-full shadow-xl flex items-center justify-center animate-bounce z-40"
+                title="Salvar Alterações Pendentes"
+            >
+                <CloudUpload size={24} />
+            </button>
+        )}
       </main>
 
       {/* SYNC / BACKUP MODAL */}
       {isSyncModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-                <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-6 text-white text-center relative">
+                <div className={`p-6 text-white text-center relative ${hasUnsavedChanges ? 'bg-rose-500' : 'bg-gradient-to-r from-blue-600 to-blue-500'}`}>
                     <h2 className="text-2xl font-bold flex items-center justify-center gap-2">
-                        <Cloud size={28} /> Sincronização Nuvem
+                        {hasUnsavedChanges ? <CloudLightning size={28} /> : <Cloud size={28} />} 
+                        {hasUnsavedChanges ? 'Alterações Pendentes!' : 'Sincronização Nuvem'}
                     </h2>
                     <p className="text-blue-100 text-sm mt-2">
-                        Google Drive da A&A Delícias
+                        {hasUnsavedChanges ? 'Você tem novos dados não salvos no Drive.' : 'Conecte seus dispositivos via Google Drive'}
                     </p>
                     <button 
                         onClick={() => setIsSyncModalOpen(false)}
@@ -707,8 +751,9 @@ function App() {
                     <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-100 text-sm text-yellow-800 flex gap-2 items-start">
                         <AlertTriangle size={20} className="shrink-0 mt-0.5" />
                         <div>
-                            <p className="mb-1 font-bold">Passo a Passo:</p>
-                            Para enviar ou receber dados, use os botões abaixo e salve/abra o arquivo na sua pasta do Drive.
+                            <p className="mb-1 font-bold">Fluxo Seguro:</p>
+                            1. Clique em <strong>"Enviar para Nuvem"</strong> para salvar este arquivo.<br/>
+                            2. Na próxima tela, escolha sua pasta do Google Drive.
                         </div>
                     </div>
 
@@ -719,13 +764,13 @@ function App() {
                     <div className="grid grid-cols-1 gap-3">
                         {/* EXPORT SECTION */}
                         <div className="border border-blue-100 rounded-xl p-3 bg-blue-50/30">
-                            <p className="text-xs text-blue-600 font-bold mb-2 uppercase text-center">Enviar para o Drive</p>
+                            <p className="text-xs text-blue-600 font-bold mb-2 uppercase text-center">Salvar meus dados</p>
                             <div className="flex gap-2">
                                 <button 
                                     onClick={handleExportData}
-                                    className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 text-sm"
+                                    className={`flex-1 py-3 text-white rounded-lg font-bold transition-all flex items-center justify-center gap-2 text-sm ${hasUnsavedChanges ? 'bg-rose-600 hover:bg-rose-700 shadow-lg scale-105' : 'bg-blue-600 hover:bg-blue-700'}`}
                                 >
-                                    <Upload size={18} /> 1. Gerar Arquivo
+                                    <Upload size={18} /> 1. Enviar p/ Nuvem
                                 </button>
                                 <a 
                                     href={DRIVE_LINK} 
@@ -733,18 +778,18 @@ function App() {
                                     rel="noreferrer"
                                     className="flex-1 py-3 bg-white border border-blue-200 text-blue-700 rounded-lg font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2 text-sm"
                                 >
-                                    <ExternalLink size={18} /> 2. Abrir Pasta
+                                    <ExternalLink size={18} /> 2. Ver Pasta
                                 </a>
                             </div>
                         </div>
 
                         {/* IMPORT SECTION */}
-                        <div className="border border-green-100 rounded-xl p-3 bg-green-50/30">
-                            <p className="text-xs text-green-600 font-bold mb-2 uppercase text-center">Receber do Drive</p>
+                        <div className="border border-green-100 rounded-xl p-3 bg-green-50/30 opacity-80 hover:opacity-100 transition-opacity">
+                            <p className="text-xs text-green-600 font-bold mb-2 uppercase text-center">Carregar de outro aparelho</p>
                             <div className="flex gap-2 flex-col-reverse">
                                 <label className="w-full py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer">
                                     <input type="file" accept=".json" className="hidden" onChange={handleImportData} />
-                                    <Download size={18} /> 2. Selecionar Arquivo Baixado
+                                    <Download size={18} /> 2. Receber da Nuvem
                                 </label>
                                 <a 
                                     href={DRIVE_LINK} 
