@@ -636,7 +636,7 @@ function App() {
                 title={`Última Sincronização: ${lastSyncTime}`}
               >
                   {hasUnsavedChanges ? <CloudLightning size={18}/> : (lastSyncTime !== 'Nunca' ? <CheckCircle size={18}/> : <RefreshCw size={18} />)}
-                  <span className="hidden lg:inline">{hasUnsavedChanges ? 'Salvar na Nuvem' : 'Sincronizar'}</span>
+                  <span className="hidden lg:inline">{hasUnsavedChanges ? 'Salvar no Drive' : 'Conectar Drive'}</span>
               </button>
 
               <div className="h-6 w-px bg-gray-200 mx-1"></div>
@@ -692,7 +692,7 @@ function App() {
                         hasUnsavedChanges ? 'bg-rose-500 text-white animate-pulse' : 'bg-blue-50 text-blue-600'
                     }`}
                  >
-                    <RefreshCw size={18} /> {hasUnsavedChanges ? 'Salvar Alterações Pendentes' : 'Sincronizar / Google Drive'}
+                    <RefreshCw size={18} /> {hasUnsavedChanges ? 'Salvar no Drive' : 'Conectar Google Drive'}
                  </button>
               </div>
 
@@ -778,7 +778,7 @@ function App() {
                                     rel="noreferrer"
                                     className="flex-1 py-3 bg-white border border-blue-200 text-blue-700 rounded-lg font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2 text-sm"
                                 >
-                                    <ExternalLink size={18} /> 2. Ver Pasta
+                                    <ExternalLink size={18} /> 2. Conectar ao Drive
                                 </a>
                             </div>
                         </div>
