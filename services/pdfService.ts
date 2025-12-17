@@ -38,8 +38,8 @@ export const generateOrderPDF = (order: Order, customLogo?: string) => {
   doc.setTextColor(100, 100, 100);
   doc.text("Doces Personalizados", 14, 15);
   
-  // Header Info (Right)
-  doc.text("Contato: (11) 99999-9999", 195, 15, { align: "right" });
+  // Header Info (Right) - Atualizado com o número real
+  doc.text("Contato: (11) 97124-0356", 195, 15, { align: "right" });
 
   // Title "ORÇAMENTO"
   doc.setFontSize(16);
@@ -185,7 +185,7 @@ export const generateOrderPDF = (order: Order, customLogo?: string) => {
   doc.text("Forma de Pagamento:", 18, footerY + 8);
   doc.setFont("helvetica", "normal");
   doc.text("50% no ato da encomenda e 50% na entrega.", 18, footerY + 14);
-  doc.text("Chave PIX: (11) 99999-9999 (CNPJ/CPF)", 18, footerY + 20);
+  doc.text("Chave PIX: 11971240356", 18, footerY + 20); // Chave PIX Atualizada
 
   doc.setFont("helvetica", "bold");
   doc.text("Validade do Orçamento:", 110, footerY + 8);
@@ -594,7 +594,7 @@ export const generateCatalogPDF = (products: Product[], returnBlob: boolean = fa
   doc.text("Solicite seu Orçamento", 105, 175, { align: "center" });
   doc.setTextColor(50, 50, 50);
   doc.setFontSize(14);
-  doc.text("(11) 99999-9999", 105, 190, { align: "center" });
+  doc.text("11971240356", 105, 190, { align: "center" }); // Telefone de Contato Atualizado
 
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(12);
