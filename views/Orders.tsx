@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Order, OrderStatus, ProductionStage, Product, OrderItem, Customer, Transaction } from '../types';
 import { Plus, Search, Filter, MessageCircle, Sparkles, Save, X, Trash2, FileText, ShoppingBag, Printer, Edit, ArrowLeft, User, Share2, Truck, Percent } from 'lucide-react';
@@ -16,9 +17,8 @@ interface OrdersProps {
   logo?: string;
 }
 
-// Definição da composição dos Kits e Itens Compostos para explosão automática
+// Definição da composição dos Kits para explosão automática de itens
 const KITS_COMPOSITION: Record<string, { id: string, qty: number }[]> = {
-  // Kits Festa
   'prod_kit_1': [ // Kit 1 - R$ 426,00
     { id: 'prod_donut_mini', qty: 10 },
     { id: 'prod_cakepop', qty: 5 },
@@ -39,19 +39,6 @@ const KITS_COMPOSITION: Record<string, { id: string, qty: number }[]> = {
     { id: 'prod_pdm_mini', qty: 10 },
     { id: 'prod_pirulito', qty: 10 },
     { id: 'prod_cupcake', qty: 10 }
-  ],
-
-  // Caixinhas de Donuts
-  'prod_box_2': [ // Caixinha com 2
-    { id: 'prod_donut_mini', qty: 2 }
-  ],
-  'prod_box_9': [ // Caixinha com 9
-    { id: 'prod_donut_mini', qty: 9 }
-  ],
-
-  // Coleções de Biscoitos
-  'prod_biscoito_6': [ // Coleção com 6
-    { id: 'prod_biscoito', qty: 6 }
   ]
 };
 
@@ -129,17 +116,17 @@ const Orders: React.FC<OrdersProps> = ({
     let candidates: Omit<OrderItem, 'id'>[] = [];
 
     if (kitComposition) {
-        // 1. Kit/Composite Parent (Preço Cheio)
+        // 1. Kit Parent
         candidates.push({
             productId: product.id,
             name: product.name,
             quantity: itemQuantity,
             unitPrice: itemPrice,
-            details: 'Item Composto / Kit',
+            details: 'Kit Promocional',
             measureUnit: 'un'
         });
 
-        // 2. Components (Preço Zero)
+        // 2. Kit Components
         kitComposition.forEach((comp) => {
             const compProduct = products.find(p => p.id === comp.id);
             if (compProduct) {
@@ -148,7 +135,7 @@ const Orders: React.FC<OrdersProps> = ({
                     name: `(Incluso no Kit) ${compProduct.name}`,
                     quantity: comp.qty * itemQuantity,
                     unitPrice: 0, 
-                    details: `Item integrante de: ${product.name}`,
+                    details: `Item integrante do ${product.name}`,
                     measureUnit: compProduct.measureUnit
                 });
             }
@@ -328,7 +315,7 @@ const Orders: React.FC<OrdersProps> = ({
     let revenueAmount = 0;
     if (newOrder.status === OrderStatus.PENDENTE_50) {
         revenueAmount = calculatedTotal / 2;
-    } else if ([OrderStatus.PAGO_100, OrderStatus.FINALIZADO, OrderStatus.ENTREGUE].includes(newOrder.status as OrderStatus)) {
+    } else if ([OrderStatus.PAGO_100, OrderStatus.FINALIZADO].includes(newOrder.status as OrderStatus)) {
         revenueAmount = calculatedTotal;
     }
 
@@ -425,8 +412,7 @@ const Orders: React.FC<OrdersProps> = ({
     [OrderStatus.PENDENTE_100]: 'bg-red-100 text-red-700',
     [OrderStatus.PENDENTE_50]: 'bg-orange-100 text-orange-700',
     [OrderStatus.PAGO_100]: 'bg-green-100 text-green-700',
-    [OrderStatus.FINALIZADO]: 'bg-blue-100 text-blue-700',
-    [OrderStatus.ENTREGUE]: 'bg-gray-800 text-white',
+    [OrderStatus.FINALIZADO]: 'bg-blue-100 text-blue-700'
   };
 
   const filteredOrders = orders
