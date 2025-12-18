@@ -4,8 +4,7 @@ export enum OrderStatus {
   PENDENTE_50 = '50% Pendente',
   PENDENTE_100 = '100% Pendente',
   PAGO_100 = '100% Pago',
-  FINALIZADO = 'Finalizado',
-  ENTREGUE = 'Entregue'
+  FINALIZADO = 'Finalizado'
 }
 
 export enum ProductionStage {
