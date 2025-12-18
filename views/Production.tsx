@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Order, ProductionStage, OrderStatus } from '../types';
 import { Calendar, CheckSquare, Package, Truck, ArrowLeft } from 'lucide-react';
@@ -19,8 +20,7 @@ const Production: React.FC<ProductionProps> = ({ orders, onBack }) => {
     return orders.filter(o => 
       o.dueDate === dateStr && 
       o.status !== OrderStatus.ORCAMENTO && 
-      o.status !== OrderStatus.FINALIZADO &&
-      o.status !== OrderStatus.ENTREGUE
+      o.status !== OrderStatus.FINALIZADO
     );
   };
 
