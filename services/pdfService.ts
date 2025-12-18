@@ -211,7 +211,7 @@ export const generateOrderPDF = (order: Order, customLogo?: string, returnBlob: 
   doc.setFont("helvetica", "normal");
   doc.text("5 dias úteis.", 110, footerY + 14);
 
-  const fileName = `orcamento_${(order.customerName || "cliente").replace(/\s+/g, '_')}.pdf`;
+  const fileName = `A&A_Orcamento_${(order.customerName || "cliente").replace(/\s+/g, '_')}.pdf`;
   if (returnBlob) return doc.output('blob');
   doc.save(fileName);
 };
