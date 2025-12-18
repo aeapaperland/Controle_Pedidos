@@ -64,7 +64,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
 
   const nextEvents = orders
     .filter(o => {
-        if (o.status === OrderStatus.ENTREGUE || o.status === OrderStatus.FINALIZADO || o.status === OrderStatus.ORCAMENTO) return false;
+        if (o.status === OrderStatus.FINALIZADO || o.status === OrderStatus.ORCAMENTO) return false;
         
         const [y, m, d] = o.dueDate.split('-').map(Number);
         const orderDate = new Date(y, m - 1, d);
@@ -112,7 +112,6 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
         }
 
         // Trigger: Aparecer 10 meses antes do próximo aniversário (ou seja, 2 meses antes da data)
-        // Conforme exemplo: 17/12/2025 (Festa) -> Aparece em 17/10/2026 para a festa de 17/12/2026
         const triggerDate = new Date(nextBirthday);
         triggerDate.setMonth(nextBirthday.getMonth() - 2); 
 
@@ -450,4 +449,3 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
 };
 
 export default Dashboard;
-
