@@ -14,19 +14,16 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
   const [isWeekModalOpen, setIsWeekModalOpen] = useState(false);
 
   // --- Calculations ---
-  // Fix: Use local date for "today" to match input date pickers (YYYY-MM-DD)
   const today = new Date();
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, '0');
   const day = String(today.getDate()).padStart(2, '0');
   const todayStr = `${year}-${month}-${day}`;
   
-  // 1. Orders today (Include all non-delivered active orders if necessary, but usually confirmed)
   const ordersToday = orders.filter(o => o.dueDate === todayStr && o.status !== OrderStatus.ORCAMENTO).length;
 
-  // 2. Orders this week (Current Week: Monday to Sunday)
   const curr = new Date();
-  const currentDay = curr.getDay(); // 0=Dom, 1=Seg, ..., 6=Sab
+  const currentDay = curr.getDay(); 
   const daysToMonday = currentDay === 0 ? 6 : currentDay - 1;
   
   const monday = new Date(curr);
@@ -39,7 +36,6 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
 
   const ordersWeekList = useMemo(() => {
       return orders.filter(o => {
-        // Exclude Budgets from Weekly Deliveries
         if (o.status === OrderStatus.ORCAMENTO) return false;
 
         const [y, m, d] = o.dueDate.split('-').map(Number);
@@ -56,19 +52,16 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
 
   const ordersWeekCount = ordersWeekList.length;
 
-  // 3. Pending Budgets (New Section)
   const pendingBudgets = useMemo(() => {
       return orders
         .filter(o => o.status === OrderStatus.ORCAMENTO)
         .sort((a, b) => {
-            // Sort by Due Date (Ascending) to show urgency
             const dateA = new Date(a.dueDate + 'T00:00:00').getTime();
             const dateB = new Date(b.dueDate + 'T00:00:00').getTime();
             return dateA - dateB;
         });
   }, [orders]);
 
-  // 4. Next Events (Upcoming orders - EXCLUDING Budgets)
   const nextEvents = orders
     .filter(o => {
         if (o.status === OrderStatus.ENTREGUE || o.status === OrderStatus.FINALIZADO || o.status === OrderStatus.ORCAMENTO) return false;
@@ -86,15 +79,17 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
     })
     .slice(0, 3);
 
-  // --- CRM: Opportunities (Birthdays coming up) ---
   const opportunities = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
     const uniqueClients = new Map<string, Order>();
 
+    // Step 1: Agrupar o último pedido finalizado por cliente/aniversariante
     orders.forEach(order => {
        if (!order.birthdayPersonName) return;
+       if (order.status === OrderStatus.ORCAMENTO) return;
+       
        const key = `${order.customerName.toLowerCase()}-${order.birthdayPersonName.toLowerCase()}`;
        const existing = uniqueClients.get(key);
        
@@ -105,31 +100,31 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
 
     const results: { order: Order, nextDate: Date, newAge: number, daysUntil: number }[] = [];
 
+    // Step 2: Calcular data do PRÓXIMO aniversário
     uniqueClients.forEach(order => {
         const [y, m, d] = order.dueDate.split('-').map(Number);
-        const orderDate = new Date(y, m - 1, d); 
-        orderDate.setHours(0,0,0,0);
+        const lastPartyDate = new Date(y, m - 1, d);
         
-        if (orderDate >= today) return;
-
-        const currentYear = today.getFullYear();
-        let nextDate = new Date(currentYear, orderDate.getMonth(), orderDate.getDate());
-        
-        if (nextDate < today) {
-            nextDate.setFullYear(currentYear + 1);
+        // Determinar o próximo aniversário (mesmo dia/mês, no ano atual ou no próximo)
+        let nextBirthday = new Date(today.getFullYear(), lastPartyDate.getMonth(), lastPartyDate.getDate());
+        if (nextBirthday < today) {
+            nextBirthday.setFullYear(today.getFullYear() + 1);
         }
 
-        const reminderStart = new Date(nextDate);
-        reminderStart.setMonth(nextDate.getMonth() - 1);
-        reminderStart.setHours(0, 0, 0, 0);
-        
-        if (today >= reminderStart) {
-            const diffTime = nextDate.getTime() - today.getTime();
+        // Trigger: Aparecer 10 meses antes do próximo aniversário (ou seja, 2 meses antes da data)
+        // Conforme exemplo: 17/12/2025 (Festa) -> Aparece em 17/10/2026 para a festa de 17/12/2026
+        const triggerDate = new Date(nextBirthday);
+        triggerDate.setMonth(nextBirthday.getMonth() - 2); 
+
+        if (today >= triggerDate && today < nextBirthday) {
+            const diffTime = nextBirthday.getTime() - today.getTime();
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            const yearDiff = nextDate.getFullYear() - orderDate.getFullYear();
+            
+            // Idade atualizada: idade anterior + diferença de anos
+            const yearDiff = nextBirthday.getFullYear() - lastPartyDate.getFullYear();
             const newAge = (order.birthdayPersonAge || 0) + yearDiff;
             
-            results.push({ order, nextDate, newAge, daysUntil: diffDays });
+            results.push({ order, nextDate: nextBirthday, newAge, daysUntil: diffDays });
         }
     });
 
@@ -209,21 +204,13 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
         </div>
       </div>
 
-      {/* Navigation Buttons Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <NavCard 
            icon={ClipboardList}
            title="Pedidos"
            subtitle={`${ordersToday} entregas hoje`}
            colorClass="bg-blue-500"
            onClick={() => onNavigate('orders')}
-        />
-        <NavCard 
-           icon={BookOpen}
-           title="Catálogo"
-           subtitle="Gerenciar produtos"
-           colorClass="bg-purple-500"
-           onClick={() => onNavigate('catalog')}
         />
         <NavCard 
            icon={DollarSign}
@@ -234,7 +221,6 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
         />
       </div>
 
-      {/* Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <button 
           onClick={() => setIsWeekModalOpen(true)}
@@ -251,7 +237,6 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
         </button>
       </div>
 
-      {/* CRM Section: Upcoming Birthdays */}
       {opportunities.length > 0 && (
         <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl shadow-sm border border-amber-100 p-6 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-10 text-amber-600">
@@ -259,7 +244,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
             </div>
             <h3 className="text-lg font-bold text-amber-800 mb-4 flex items-center gap-2 relative z-10">
                 <Sparkles className="text-amber-600" size={20} fill="currentColor" />
-                Oportunidades de Re-venda (Aniversários Próximos)
+                Oportunidades de Re-venda (Próximos Aniversários)
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
                 {opportunities.map((op, idx) => (
@@ -275,7 +260,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
                                 Aniversário de <strong>{op.order.birthdayPersonName}</strong>
                             </p>
                             <p className="text-xs text-gray-500 mt-1">
-                                Vai fazer <span className="font-bold text-rose-500">{op.newAge} anos</span> em {op.nextDate.toLocaleDateString('pt-BR')}
+                                Fará <span className="font-bold text-rose-500">{op.newAge} anos</span> em {op.nextDate.toLocaleDateString('pt-BR')}
                             </p>
                         </div>
                         <button 
@@ -292,7 +277,6 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Pending Budgets Section */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col">
               <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
@@ -332,7 +316,6 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
               </div>
           </div>
 
-          {/* Upcoming Events */}
           <div className="bg-white rounded-xl shadow-sm border border-rose-100 p-6">
               <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                   <Calendar size={20} className="text-rose-500"/>
@@ -365,7 +348,6 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
                                       </span>
                                   </div>
                               </div>
-                              {/* Item Summary */}
                               <div className="text-xs text-gray-600 bg-white/50 p-2 rounded border border-gray-100">
                                   <div className="font-semibold text-rose-500 mb-1">Itens:</div>
                                   <div className="space-y-0.5">
@@ -382,7 +364,6 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
           </div>
       </div>
 
-      {/* Modal for Weekly Orders (Optimized List View) */}
       {isWeekModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[95vw] max-h-[90vh] flex flex-col">
@@ -469,3 +450,4 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate, logo }) => {
 };
 
 export default Dashboard;
+
