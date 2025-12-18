@@ -192,7 +192,7 @@ const Orders: React.FC<OrdersProps> = ({
   };
 
   const handlePdfToWhatsapp = async (order: Order) => {
-      const fileName = `AEA_Orcamento_${order.customerName.replace(/\s+/g, '_')}.pdf`;
+      const fileName = `A&A_Orcamento_${order.customerName.replace(/\s+/g, '_')}.pdf`;
       const pdfBlob = generateOrderPDF(order, logo, true) as Blob;
       
       // Tentativa de compartilhamento nativo (Permite anexar o arquivo diretamente no WhatsApp em celulares)
